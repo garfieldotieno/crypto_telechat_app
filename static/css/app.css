@@ -1,0 +1,14 @@
+
+.body{
+    display:flex;
+}
+
+.app_container{
+    display: flex;
+    width: 400px;
+    align-items: center;
+}
+
+.active_interface{
+    display:block;
+}
