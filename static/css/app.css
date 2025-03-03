@@ -1,14 +1,21 @@
-
-.body{
-    display:flex;
+.body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
 }
 
-.app_container{
+.app_container {
     display: flex;
-    width: 400px;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    height: 100vh;
 }
 
-.active_interface{
-    display:block;
+.active_interface {
+    display: block;
+}
+
+.inactive_interface {
+    display: none;
 }

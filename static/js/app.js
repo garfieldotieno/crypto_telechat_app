@@ -1,41 +1,63 @@
-// this file  should stich:
-//  - start page
-function show_start_page(){
-    console.log('show start_page');
-}
-//  - enter stuff
-function validate_number_interface(){
-    console.log('show validate_number_interface');
-}
-//  - base navigation
-function base_navigation_interface(){
-    console.log("show base_navigation page");
-}
-//  - chat listing pad
-function show_chat_listing_pad(){
-    console.log("show chat_listing_pad");
-}
-//  - contact listing pad 
-function show_contact_listing_pad(){
-    console.log("show contact_listing_pad");
-}
-//  - call listing pad
-function show_call_listing_pad(){
-    console.log(" show call_listing_pad");
-}
-//  - settings
-function show_setttings_interface(){
-    console.log("show settings interface");
-}
-//  - one-on-one chat interface
-function show_primary_chat_interface(){
-    console.log("show one_on_one chat interface");
-}
-//  - group chat interface
-function show_group_chat_interface(){
-    console.log("show group_chat_interface");
-}
-//  - upload media [ photo]
-function upload_media_interface(){
-    console.log("show upload interface");
-}
+// Wait for DOM to load before executing scripts
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("App Loaded");
+
+    // Get all interfaces
+    const interfaces = document.querySelectorAll(".app_container > div");
+
+    // Function to toggle visibility
+    function showInterface(targetClass) {
+        interfaces.forEach(el => el.classList.add("inactive_interface")); // Hide all
+        document.querySelector(`.${targetClass}`).classList.remove("inactive_interface"); // Show target
+        DocumentFragment.querySelector(`.${targetClass}`).classList.add('active_interface');
+        console.log(`Switched to ${targetClass}`);
+    }
+
+    // Start interface
+    function show_start_page() {
+        showInterface("start_interface");
+    }
+
+    // Validate number interface
+    function validate_number_interface() {
+        showInterface("validate_number_interface");
+    }
+
+    // Chat listing
+    function show_chat_listing_pad() {
+        showInterface("chat_listing_pad");
+    }
+
+    // Contact listing
+    function show_contact_listing_pad() {
+        showInterface("contact_listing_pad");
+    }
+
+    // Call listing
+    function show_call_listing_pad() {
+        showInterface("call_listing_pad");
+    }
+
+    // Settings
+    function show_settings_interface() {
+        showInterface("settings_interface");
+    }
+
+    // One-on-one chat
+    function show_primary_chat_interface() {
+        showInterface("primary_chat_interface");
+    }
+
+    // Group chat
+    function show_group_chat_interface() {
+        showInterface("group_chat_interface");
+    }
+
+    // Upload media
+    function upload_media_interface() {
+        showInterface("upload_media_interface");
+    }
+
+    // Example event bindings
+    document.querySelector(".start_interface").addEventListener("click", validate_number_interface);
+});
