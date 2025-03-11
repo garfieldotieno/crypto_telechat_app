@@ -1,21 +1,67 @@
 .body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background-color: #f0f2f5;
+    background-color: #1D95C7;
+    height: 100vh;
+    overflow: hidden; /* Prevents unwanted scrolling */
 }
 
-.app_container {
+.app_container_small, .app_container_big {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100vh;
+    width: 100%;
+    background-color: #1D95C7;
 }
 
-.active_interface {
-    display: block;
+.app_center_container_small, .app_center_container_big {
+    display: flex;
+    flex-direction: column;
+    background-color: #0E4D68;
+    width: 100%; /* Full width for small screens */
+    height: 100vh; /* Take full height */
+    padding: 0;
 }
 
-.inactive_interface {
-    display: none;
+/* On large screens, center & shrink */
+@media screen and (min-width: 777px) {
+    .app_center_container_big {
+        width: 33.33%; /* 1/3 of the parent */
+        margin: 0 auto;
+    }
+}
+
+
+
+/* Ensure top is fixed and occupies full width */
+.top_section {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    text-align: center;
+}
+
+/* Middle Section - takes available space */
+.middle_section {
+    flex-grow: 1; /* Takes remaining space */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f1f1f1; /* Example color */
+    width: 100%; /* Ensures full width */
+}
+
+/* Ensure bottom is fixed and occupies full width */
+.bottom_section {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background-color: #ffffff; /* Example color */
+    text-align: center;
 }
