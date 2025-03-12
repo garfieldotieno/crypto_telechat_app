@@ -13,23 +13,14 @@ function set_display() {
     }
 }
 
+
+
 // Function to create small screen structure
 function render_small_screen_view() {
-    console.log("calling render_small_screen_view");
-
-    let smallContainer = document.createElement("div");
-    smallContainer.classList.add("app_container_small");
-
-    let centerContainer = document.createElement("div");
-    centerContainer.classList.add("app_center_container_small");
-    // begin render function section
+   	console.log("calling render_small_screen_view")
 
     // example function render_start_interface
-    render_start_interface()
-    // end render function
-    
-    smallContainer.appendChild(centerContainer);
-    document.body.appendChild(smallContainer); // Attach directly to body
+    render_start_interface();
 }
 
 
@@ -38,78 +29,53 @@ function render_small_screen_view() {
 function render_big_screen_view() {
     console.log("calling render_big_screen_view");
 
-    let bigContainer = document.createElement("div");
-    bigContainer.classList.add("app_container_big");
-
-    let centerContainer = document.createElement("div");
-    centerContainer.classList.add("app_center_container_big");
-
-
     // begin render function section
-    
-
-    // Top section
-        let top_section = document.createElement("div");
-        top_section.classList.add("top_section");
-        let first_content = "";
-        let title_content = "";
-        let right_content = "";
-        
-        update_top_section(first_content, title_content, right_content);
-    
-        // Add a paragraph for top_section
-        let paragraph_top = document.createElement("p");
-        paragraph_top.textContent = "This is top_section";
-        paragraph_top.style.textAlign = "center"; 
-    
-        top_section.appendChild(paragraph_top);
-    
-        // Middle section
-        let middle_section = document.createElement("div");
-        middle_section.classList.add("middle_section");
-    
-        let middle_component_item = document.createElement("div");
-        
-        update_middle_section([middle_component_item]);
-    
-        // Add a paragraph for middle_section
-        let paragraph_middle = document.createElement("p");
-        paragraph_middle.textContent = "This is middle_section added content"; 
-        paragraph_middle.style.textAlign = "center"; 
-    
-        middle_section.appendChild(paragraph_middle);
-    
-        // Bottom section
-        let bottom_section = document.createElement("div");
-        bottom_section.classList.add("bottom_section");
-    
-        let bottom_component_item = document.createElement("div");
-        
-        update_bottom_section([bottom_component_item]);
-    
-        // Add a paragraph for bottom_section
-        let paragraph_bottom = document.createElement("p");
-        paragraph_bottom.textContent = "This is bottom_section"; 
-        paragraph_bottom.style.textAlign = "center"; 
-    
-        bottom_section.appendChild(paragraph_bottom);
-    
-        // Append sections to center container
-        centerContainer.appendChild(top_section);
-        centerContainer.appendChild(middle_section);
-        centerContainer.appendChild(bottom_section);
-    
-    // end render function
-    
-    bigContainer.appendChild(centerContainer);
-    document.body.appendChild(bigContainer); // Attach directly to body
+	render_start_interface();
 }
 
 
-function update_top_section(first_content,middle_content, left_content){
+
+function update_top_section(visible_state, left_item_content, middle_content, right_item_content){
 	console.log("update_top_section");
-	// start by adding current paragraph
+
+    let top_section = document.querySelector(".top_section");
+    
+    if(visible_state == "invisible"){
+        top_section.style.display = "none";
+    }
+    else{
+        // lets display the top section such that first_content: fa fa-arrow-left "back", h3 to show middle conent, left_content = ""
+        let left_content = document.createElement("h3");
+        left_content.classList.add("left_content");
+        left_content.innerHTML = left_item_content;
+
+        let title_content = document.createElement("h3");
+        title_content.classList.add("title_content");
+        title_content.innerHTML = middle_content;
+
+        let right_content = document.createElement("h3");
+        right_content.classList.add("right_content");
+        right_content.innerHTML = right_item_content;
+
+        // create a content for free
+        let content_container = document.createElement("div");
+        content_container.classList.add("content_container");
+
+        
+        // add,then display block
+        content_container.appendChild(left_content);
+        content_container.appendChild(title_content);
+        content_container.appendChild(right_content);
+
+
+        top_section.appendChild(content_container);
+        
+
+        top_section.style.display = "block";
+    }
+	
 }
+
 
 function update_middle_section([component_item,]){
 	console.log("update_middlle_section");
@@ -125,83 +91,95 @@ function update_bottom_section([component_item,]){
 function render_start_interface() {
     console.log("calling render_start_interface");
 
-    let container = document.createElement("div");
-    container.classList.add(window.innerWidth < 777 ? "app_container_small" : "app_container_big");
+    document.body.innerHTML = "";
 
-    let centerContainer = document.createElement("div");
-    centerContainer.classList.add(window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big");
+    // Determine container classes based on screen size
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
 
-    // Top section
+    // If the container does not exist, create and append it
+    container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+   
+
+    // If the center container does not exist, create and append it
+    centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    // Clear existing content inside the center container
+    centerContainer.innerHTML = "";
+
+    // Create and append top section
     let top_section = document.createElement("div");
     top_section.classList.add("top_section");
-    let first_content = "";
-    let title_content = "";
-    let right_content = "";
 
-    update_top_section(first_content, title_content, right_content);
+    let left_content = ``;
+    
+    let title_content = "Welcome";
+    
+    let right_content = ``;
 
-    // Add a paragraph for top_section
-    let paragraph_top = document.createElement("p");
-    paragraph_top.textContent = "This is top_section";
-    paragraph_top.style.textAlign = "center";
-
-    top_section.appendChild(paragraph_top);
-
-    // Middle section
+    // Create and append middle section
     let middle_section = document.createElement("div");
     middle_section.classList.add("middle_section");
 
-    let middle_component_item = document.createElement("div");
-
-    update_middle_section([middle_component_item]);
-
-    // Add a paragraph for middle_section
     let paragraph_middle = document.createElement("p");
     paragraph_middle.textContent = "This is middle_section added content";
     paragraph_middle.style.textAlign = "center";
 
     middle_section.appendChild(paragraph_middle);
 
-    // Bottom section
+    // Create and append bottom section
     let bottom_section = document.createElement("div");
     bottom_section.classList.add("bottom_section");
 
-    let bottom_component_item = document.createElement("div");
-
-    update_bottom_section([bottom_component_item]);
-
-    // Add a paragraph for bottom_section
     let paragraph_bottom = document.createElement("p");
     paragraph_bottom.textContent = "This is bottom_section";
     paragraph_bottom.style.textAlign = "center";
 
     bottom_section.appendChild(paragraph_bottom);
 
-    // Append sections to center container
+    // Append sections to the center container
     centerContainer.appendChild(top_section);
     centerContainer.appendChild(middle_section);
     centerContainer.appendChild(bottom_section);
 
-    container.appendChild(centerContainer);
-    document.body.appendChild(container); // Attach directly to body
+    update_top_section("visible", left_content, title_content, right_content);
 }
 
-function render_verify_identity_one(){
+
+
+function render_app_interface(){
+	console.log("calling render_app_interface");
+	
+}
+
+function render_verify_identity_one_interface(){
 	console.log("calling render_verify_identity_one");
 }
 
-function render_verify_identity_two(){
+function render_verify_identity_two_interface(){
 	console.log("calling render_verify_identity_two");
 }
 
+function navigation_bar(){
+	console.log("rendering navigation bar");
+}
 
-// Call initially & on resize
-set_display();
-window.addEventListener("resize", set_display);
+function render_list_pad_contacts(){
+	console.log("rendering listing_pad_container");
+}
 
+
+function render_settings(){
+	console.log("calling render_settigns");
+}
 
 // Wait for DOM to load before executing scripts
 document.addEventListener("DOMContentLoaded", () => {
     console.log("App Loaded");
     set_display();
+    window.addEventListener("resize", set_display);
 });

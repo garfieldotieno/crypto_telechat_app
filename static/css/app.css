@@ -34,16 +34,41 @@
 }
 
 
+.invisble{
+    display: none;
+}
 
-/* Ensure top is fixed and occupies full width */
+
 .top_section {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
     width: 100%;
+    height: 50px;
+    background-color: #ddd;
+}
+
+.content_container{
+	display: grid;
+	grid-template-columns: 20% 60% 20%;
+	font-size: small;
+	font-style: regular;
+}
+
+.left_content {
     text-align: center;
 }
+
+.center_content {
+    text-align: center;
+}
+
+.title_content{
+	display: grid;
+	justify-content: center;
+}
+
+.right_content {
+    text-align: center;
+}
+
 
 /* Middle Section - takes available space */
 .middle_section {
