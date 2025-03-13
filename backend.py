@@ -34,11 +34,16 @@ class GroupMembers(db.Model):
 
 class Chat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    messages = db.relationship('Message', backref='chat', lazy=True)
+    chat_type = db.Column(db.String(10), nullable=False)  # 'single' or 'group'
+    chat_member_ids = db.Column(db.String, nullable=False)  # Comma-separated user IDs
+    messages = db.relationship('ChatMessage', backref='chat', lazy=True)
 
-class Message(db.Model):
+class ChatMembers(db.Model):
+    __tablename__ = 'chat_members'
+    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+
+class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -57,7 +62,7 @@ class CreateSingleChat(Resource):
     def post(self):
         data = request.get_json()
         user_id = data.get('user_id')
-        chat = Chat(user_id=user_id)
+        chat = Chat(chat_type='single', chat_member_ids=str(user_id))
         db.session.add(chat)
         db.session.commit()
         return jsonify({"message": "Single chat created", "chat_id": chat.id})
@@ -66,7 +71,7 @@ class CreateGroupChat(Resource):
     def post(self):
         data = request.get_json()
         group_id = data.get('group_id')
-        chat = Chat(group_id=group_id)
+        chat = Chat(chat_type='group', chat_member_ids=','.join(map(str, group_id)))
         db.session.add(chat)
         db.session.commit()
         return jsonify({"message": "Group chat created", "chat_id": chat.id})
@@ -84,7 +89,7 @@ class CreateSingleChatMessage(Resource):
             media_filename = secure_filename(media.filename)
             media.save(os.path.join(app.config['UPLOAD_FOLDER'], media_filename))
 
-        message = Message(user_id=user_id, chat_id=chat_id, content=content, media_filename=media_filename)
+        message = ChatMessage(user_id=user_id, chat_id=chat_id, content=content, media_filename=media_filename)
         db.session.add(message)
         db.session.commit()
         return jsonify({"message": "Message sent", "message_id": message.id})
@@ -102,7 +107,7 @@ class CreateGroupChatMessage(Resource):
             media_filename = secure_filename(media.filename)
             media.save(os.path.join(app.config['UPLOAD_FOLDER'], media_filename))
 
-        message = Message(user_id=user_id, chat_id=chat_id, content=content, media_filename=media_filename)
+        message = ChatMessage(user_id=user_id, chat_id=chat_id, content=content, media_filename=media_filename)
         db.session.add(message)
         db.session.commit()
         return jsonify({"message": "Message sent", "message_id": message.id})
@@ -188,6 +193,7 @@ class SignGroupWithdrawalRequest(Resource):
         user_id = data.get('user_id')
         # Here you would typically handle the logic for signing the withdrawal request
         return jsonify({"message": "Withdrawal request signed"})
+
 
 # Register API resources
 api.add_resource(CreateSingleChat, '/api/chat/single')

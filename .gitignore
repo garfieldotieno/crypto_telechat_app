@@ -1,3 +1,8 @@
 venv/*
 
 .vercel
+
+test_media/*
+
+instance/*
+
