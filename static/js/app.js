@@ -1,7 +1,6 @@
 function set_display() {
     console.log("calling set_display");
 
-    // Clear the entire body before adding new elements
     document.body.innerHTML = "";
 
     if (window.innerWidth < 777) {
@@ -13,171 +12,215 @@ function set_display() {
     }
 }
 
-
-
-// Function to create small screen structure
 function render_small_screen_view() {
-   	console.log("calling render_small_screen_view")
-
-    // example function render_start_interface
+    console.log("calling render_small_screen_view");
     render_start_interface();
 }
 
-
-
-// Function to create big screen structure
 function render_big_screen_view() {
     console.log("calling render_big_screen_view");
-
-    // begin render function section
-	render_start_interface();
+    render_start_interface();
 }
 
+// 🎯 Object-Based UI Structure (Renamed to start_ui_structure)
+let start_ui_structure = {
+    top_section: [
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
+        { visible: true, component_type: "text", label: "Welcome", position: "center" },
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
+    ],
+    middle_section: [
+        { visible: true, component_type: "background_image", img_src: "static/images/SplashScreen.png" }
+    ],
+    bottom_section: [
+        { visible: true, component_type: "button_stack", 
+          item_list: [{ item_type: "button", item_label: "Proceed", item_icon: "fa-solid fa-arrow-right" }] 
+        }
+    ]
+};
 
 
-function update_top_section(visible_state, left_item_content, middle_content, right_item_content){
-	console.log("update_top_section");
+let verify_identity_1_ui_structure = {
+    top_section: [
+        { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
+        { visible: true, component_type: "text", label: "Enter Details", position: "center" },
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
+    ],
+    middle_section: [
+        { 
+            visible: true, 
+            component_type: "input_field", 
+            label: "Your Phone", 
+            country: "Kenya", 
+            placeholder: "Your phone number"
+        }
+    ],
+    bottom_section: [
+        { visible: true, component_type: "button", label: "Proceed", action: "next_step" }
+    ]
+};
 
-    let top_section = document.querySelector(".top_section");
+
+
+
+// 🛠️ Function to Create Top Section
+function create_top_section(items) {
+    let section = document.createElement("div");
+    section.classList.add("top_section");
+
+    let content_container = document.createElement("div");
+    content_container.classList.add("content_container");
+
+    let left_content = document.createElement("div");
+    left_content.classList.add("left_content");
+
+    let center_content = document.createElement("div");
+    center_content.classList.add("center_content");
+
+    let title_content = document.createElement("div");
+    title_content.classList.add("title_content");
+
+    let right_content = document.createElement("div");
+    right_content.classList.add("right_content");
+
+    items.forEach(item => {
+        if (item.visible) {
+            if (item.component_type === "icon_label") {
+                let the_innerHTML = `<i class="${item.icon}"></i> ${item.label}`;
+        
+                if (item.position === "left") {
+                    left_content.innerHTML = the_innerHTML; // Directly set innerHTML
+                } else if (item.position === "right") {
+                    right_content.innerHTML = the_innerHTML; // Directly set innerHTML
+                }
+            } else if (item.component_type === "text") {
+                title_content.innerHTML = `<h3>${item.label}</h3>`; // Directly set innerHTML
+            }
+        }
+        
+    });
+
+    center_content.appendChild(title_content);
     
-    if(visible_state == "invisible"){
-        top_section.style.display = "none";
-    }
-    else{
-        // lets display the top section such that first_content: fa fa-arrow-left "back", h3 to show middle conent, left_content = ""
-        let left_content = document.createElement("h3");
-        left_content.classList.add("left_content");
-        left_content.innerHTML = left_item_content;
+    content_container.appendChild(left_content);
+    content_container.appendChild(center_content);
+    content_container.appendChild(right_content);
 
-        let title_content = document.createElement("h3");
-        title_content.classList.add("title_content");
-        title_content.innerHTML = middle_content;
+    section.appendChild(content_container);
 
-        let right_content = document.createElement("h3");
-        right_content.classList.add("right_content");
-        right_content.innerHTML = right_item_content;
+    return section;
+}
 
-        // create a content for free
-        let content_container = document.createElement("div");
-        content_container.classList.add("content_container");
+// 🛠️ Function to Create Middle Section
+function create_middle_section(items) {
+    let section = document.createElement("div");
+    section.classList.add("middle_section");
 
-        
-        // add,then display block
-        content_container.appendChild(left_content);
-        content_container.appendChild(title_content);
-        content_container.appendChild(right_content);
+    items.forEach(item => {
+        if (!item.visible) return; // Skip hidden elements
 
+        let element = document.createElement("div");
 
-        top_section.appendChild(content_container);
-        
+        switch (item.component_type) {
+            case "background_image":
+                element.classList.add("image_wrapper");
+                element.innerHTML = `<img src="${item.img_src}" class="background_image" />`;
+                break;
 
-        top_section.style.display = "block";
-    }
-	
+            case "input_field":
+                element.classList.add("input_container");
+                element.innerHTML = `
+                    <h3>${item.label}</h3>
+                    <p>${item.country}</p>
+                    <input type="text" placeholder="${item.placeholder}" class="input_field" />
+                `;
+                break;
+
+            default:
+                console.warn(`Unknown component_type: ${item.component_type}`);
+        }
+
+        section.appendChild(element);
+    });
+
+    return section;
 }
 
 
-function update_middle_section([component_item,]){
-	console.log("update_middlle_section");
-	// start by adding current paragraph
+
+// 🛠️ Function to Create Bottom Section
+function create_bottom_section(items) {
+    let section = document.createElement("div");
+    section.classList.add("bottom_section");
+
+    items.forEach(item => {
+        if (item.visible && item.component_type === "button_stack") {
+            let buttonContainer = document.createElement("div");
+            buttonContainer.classList.add("button_stack");
+
+            item.item_list.forEach(btn => {
+                let button = document.createElement("button");
+                button.innerHTML = `${btn.item_label} <i class="${btn.item_icon}"></i>`;
+                button.classList.add("button_item");
+
+                buttonContainer.appendChild(button);
+            });
+
+            section.appendChild(buttonContainer);
+        }
+    });
+
+    return section;
 }
 
-function update_bottom_section([component_item,]){
-	console.log("update_bottom_section");
-	// start by adding current paragraph
-}
 
 
+// 🎨 Render Start Interface
 function render_start_interface() {
     console.log("calling render_start_interface");
 
     document.body.innerHTML = "";
 
-    // Determine container classes based on screen size
     let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
     let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
 
-    // If the container does not exist, create and append it
-    container = document.createElement("div");
+    let container = document.createElement("div");
     container.classList.add(containerClass);
     document.body.appendChild(container);
-   
 
-    // If the center container does not exist, create and append it
-    centerContainer = document.createElement("div");
+    let centerContainer = document.createElement("div");
     centerContainer.classList.add(centerContainerClass);
     container.appendChild(centerContainer);
 
-    // Clear existing content inside the center container
-    centerContainer.innerHTML = "";
+    centerContainer.appendChild(create_top_section(start_ui_structure.top_section));
+    centerContainer.appendChild(create_middle_section(start_ui_structure.middle_section));
+    centerContainer.appendChild(create_bottom_section(start_ui_structure.bottom_section));
+}
 
-    // Create and append top section
-    let top_section = document.createElement("div");
-    top_section.classList.add("top_section");
+function render_verify_identity_1() {
+    console.log("calling render_verify_identity_1");
 
-    let left_content = ``;
-    
-    let title_content = "Welcome";
-    
-    let right_content = ``;
+    document.body.innerHTML = ""; // Clear previous content
 
-    // Create and append middle section
-    let middle_section = document.createElement("div");
-    middle_section.classList.add("middle_section");
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
 
-    let paragraph_middle = document.createElement("p");
-    paragraph_middle.textContent = "This is middle_section added content";
-    paragraph_middle.style.textAlign = "center";
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
 
-    middle_section.appendChild(paragraph_middle);
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
 
-    // Create and append bottom section
-    let bottom_section = document.createElement("div");
-    bottom_section.classList.add("bottom_section");
-
-    let paragraph_bottom = document.createElement("p");
-    paragraph_bottom.textContent = "This is bottom_section";
-    paragraph_bottom.style.textAlign = "center";
-
-    bottom_section.appendChild(paragraph_bottom);
-
-    // Append sections to the center container
-    centerContainer.appendChild(top_section);
-    centerContainer.appendChild(middle_section);
-    centerContainer.appendChild(bottom_section);
-
-    update_top_section("visible", left_content, title_content, right_content);
+    // Build the UI sections dynamically
+    centerContainer.appendChild(create_top_section(verify_identity_1_ui_structure.top_section));
+    centerContainer.appendChild(create_middle_section(verify_identity_1_ui_structure.middle_section));
+    centerContainer.appendChild(create_bottom_section(verify_identity_1_ui_structure.bottom_section));
 }
 
 
-
-function render_app_interface(){
-	console.log("calling render_app_interface");
-	
-}
-
-function render_verify_identity_one_interface(){
-	console.log("calling render_verify_identity_one");
-}
-
-function render_verify_identity_two_interface(){
-	console.log("calling render_verify_identity_two");
-}
-
-function navigation_bar(){
-	console.log("rendering navigation bar");
-}
-
-function render_list_pad_contacts(){
-	console.log("rendering listing_pad_container");
-}
-
-
-function render_settings(){
-	console.log("calling render_settigns");
-}
-
-// Wait for DOM to load before executing scripts
+// 🚀 Initialize App on Load
 document.addEventListener("DOMContentLoaded", () => {
     console.log("App Loaded");
     set_display();
