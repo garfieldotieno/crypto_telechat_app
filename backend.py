@@ -223,6 +223,17 @@ api.add_resource(SignGroupWithdrawalRequest, '/api/wallet/sign_group_withdrawal'
 def index():
     return render_template('app.html')
 
+# 🟢 Serve Manifest
+@app.route("/manifest.json")
+def manifest():
+    return send_from_directory("static", "manifest.json", mimetype="application/json")
+
+# 🟢 Serve Service Worker
+@app.route("/sw.js")
+def service_worker():
+    return send_from_directory("static", "sw.js", mimetype="application/javascript")
+
+
 if __name__ == '__main__':
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])

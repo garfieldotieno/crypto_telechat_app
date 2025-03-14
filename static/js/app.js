@@ -1,6 +1,6 @@
 function set_display() {
     console.log("calling set_display");
-
+ 
     document.body.innerHTML = "";
 
     if (window.innerWidth < 777) {
@@ -25,26 +25,32 @@ function render_big_screen_view() {
 // 🎯 Object-Based UI Structure (Renamed to start_ui_structure)
 let start_ui_structure = {
     top_section: [
-        { visible: false, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "back", position: "left" },
         { visible: true, component_type: "text", label: "Welcome", position: "center" },
-        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "add", position: "right" }
     ],
     middle_section: [
         { visible: true, component_type: "background_image", img_src: "static/images/SplashScreen.png" }
     ],
     bottom_section: [
         { visible: true, component_type: "button_stack", 
-          item_list: [{ item_type: "button", item_label: "Proceed", item_icon: "fa-solid fa-arrow-right" }] 
+          item_list: [{ item_type: "button", item_label: "Proceed", item_icon: "fa-solid fa-arrow-right", action: "render_verify_identity_1" }] 
         }
     ]
 };
 
-
 let verify_identity_1_ui_structure = {
     top_section: [
-        { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
+        { 
+            visible: true, 
+            component_type: "icon_label", 
+            icon: "fa-solid fa-arrow-left", 
+            label: "Back", 
+            position: "left",
+            action: "render_start_interface" // Back to the start
+        },
         { visible: true, component_type: "text", label: "Enter Details", position: "center" },
-        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "add", position: "right" }
     ],
     middle_section: [
         { 
@@ -56,11 +62,36 @@ let verify_identity_1_ui_structure = {
         }
     ],
     bottom_section: [
-        { visible: true, component_type: "button", label: "Proceed", action: "next_step" }
+        { visible: true, component_type: "button", label: "Proceed", action: "render_verify_identity_2" }
     ]
 };
 
 
+let verify_identity_2_ui_structure = {
+    top_section: [
+        { 
+            visible: true, 
+            component_type: "icon_label", 
+            icon: "fa-solid fa-arrow-left", 
+            label: "Back", 
+            position: "left",
+            action: "render_verify_identity_1" // Back to previous step
+        },
+        { visible: true, component_type: "text", label: "Enter Confirmation Code", position: "center" },
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "add", position: "right" }
+    ],
+    middle_section: [
+        { 
+            visible: true, 
+            component_type: "input_field", 
+            label: "Confirmation Code", 
+            placeholder: "Enter the code sent to your phone"
+        }
+    ],
+    bottom_section: [
+        { visible: true, component_type: "button", label: "Confirm", action: "confirm_code" }
+    ]
+};
 
 
 // 🛠️ Function to Create Top Section
@@ -86,22 +117,28 @@ function create_top_section(items) {
     items.forEach(item => {
         if (item.visible) {
             if (item.component_type === "icon_label") {
-                let the_innerHTML = `<i class="${item.icon}"></i> ${item.label}`;
-        
+                let iconHTML = `<i class="${item.icon}"></i> ${item.label}`;
+
                 if (item.position === "left") {
-                    left_content.innerHTML = the_innerHTML; // Directly set innerHTML
+                    left_content.innerHTML = iconHTML;
+                    
+                    // Add Back Navigation Logic (Except for Start Interface)
+                    if (item.action) {
+                        left_content.classList.add("clickable");
+                        left_content.setAttribute("hx-get", `#`);
+                        left_content.setAttribute("onclick", `${item.action}()`);
+                    }
                 } else if (item.position === "right") {
-                    right_content.innerHTML = the_innerHTML; // Directly set innerHTML
+                    right_content.innerHTML = iconHTML;
                 }
             } else if (item.component_type === "text") {
-                title_content.innerHTML = `<h3>${item.label}</h3>`; // Directly set innerHTML
+                title_content.innerHTML = `<h3>${item.label}</h3>`;
             }
         }
-        
     });
 
     center_content.appendChild(title_content);
-    
+
     content_container.appendChild(left_content);
     content_container.appendChild(center_content);
     content_container.appendChild(right_content);
@@ -110,6 +147,7 @@ function create_top_section(items) {
 
     return section;
 }
+
 
 // 🛠️ Function to Create Middle Section
 function create_middle_section(items) {
@@ -131,7 +169,7 @@ function create_middle_section(items) {
                 element.classList.add("input_container");
                 element.innerHTML = `
                     <h3>${item.label}</h3>
-                    <p>${item.country}</p>
+                    <p>${item.country || ''}</p>
                     <input type="text" placeholder="${item.placeholder}" class="input_field" />
                 `;
                 break;
@@ -147,6 +185,30 @@ function create_middle_section(items) {
 }
 
 
+function setupPWAInstallButton(installButton) {
+    let deferredPrompt; // Store install event for later use
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault(); // Prevent automatic prompt
+        deferredPrompt = event;
+
+        console.log("PWA Install Prompt Available");
+        installButton.style.display = "block"; // Show the install button
+
+        installButton.addEventListener("click", () => {
+            deferredPrompt.prompt(); // Show install prompt
+
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === "accepted") {
+                    console.log("User accepted PWA install");
+                } else {
+                    console.log("User dismissed PWA install");
+                }
+                installButton.style.display = "none"; // Hide after install
+            });
+        });
+    });
+}
 
 // 🛠️ Function to Create Bottom Section
 function create_bottom_section(items) {
@@ -162,16 +224,28 @@ function create_bottom_section(items) {
                 let button = document.createElement("button");
                 button.innerHTML = `${btn.item_label} <i class="${btn.item_icon}"></i>`;
                 button.classList.add("button_item");
+                button.setAttribute("onclick", `${btn.action}()`);
 
                 buttonContainer.appendChild(button);
             });
 
+            
+
             section.appendChild(buttonContainer);
+        } else if (item.visible && item.component_type === "button") {
+            let button = document.createElement("button");
+            button.innerHTML = item.label;
+            button.classList.add("button_item");
+            button.setAttribute("onclick", `${item.action}()`);
+
+            section.appendChild(button);
         }
     });
 
     return section;
 }
+
+
 
 
 
@@ -193,9 +267,28 @@ function render_start_interface() {
     container.appendChild(centerContainer);
 
     centerContainer.appendChild(create_top_section(start_ui_structure.top_section));
-    centerContainer.appendChild(create_middle_section(start_ui_structure.middle_section));
+
+    // Create middle section and insert the install button
+    let middleSection = create_middle_section(start_ui_structure.middle_section);
+    
+
+    centerContainer.appendChild(middleSection);
     centerContainer.appendChild(create_bottom_section(start_ui_structure.bottom_section));
+
+	console.log("now adding the download button")
+    let buttonContainer = document.getElementsByClassName("button_stack")[0]; // Get first matching element
+    
+    
+
+    let install_btn = document.createElement("button");
+    install_btn.innerHTML = `Download <i class="fa-solid fa-download"></i>`;
+    install_btn.classList.add("button_item");
+    buttonContainer.appendChild(install_btn);
+
+    setupPWAInstallButton(install_btn);
+
 }
+
 
 function render_verify_identity_1() {
     console.log("calling render_verify_identity_1");
@@ -217,6 +310,29 @@ function render_verify_identity_1() {
     centerContainer.appendChild(create_top_section(verify_identity_1_ui_structure.top_section));
     centerContainer.appendChild(create_middle_section(verify_identity_1_ui_structure.middle_section));
     centerContainer.appendChild(create_bottom_section(verify_identity_1_ui_structure.bottom_section));
+}
+
+
+function render_verify_identity_2() {
+    console.log("calling render_verify_identity_2");
+
+    document.body.innerHTML = ""; // Clear previous content
+
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    // Build the UI sections dynamically
+    centerContainer.appendChild(create_top_section(verify_identity_2_ui_structure.top_section));
+    centerContainer.appendChild(create_middle_section(verify_identity_2_ui_structure.middle_section));
+    centerContainer.appendChild(create_bottom_section(verify_identity_2_ui_structure.bottom_section));
 }
 
 

@@ -90,6 +90,12 @@ body {
     display: block;
 }
 
+.install-btn {
+	width: 80%;
+	border-radius: 10px;
+	height: 40px;	
+}
+
 
 /* Input Field Styling */
 .input_container {
@@ -114,14 +120,32 @@ body {
     color: #ccc;
 }
 
-.input_container input {
-    width: 100%;
-    padding: 10px;
+/* .input_container input { */
+    /* width: 100%; */
+    /* padding: 10px; */
+    /* font-size: 16px; */
+    /* border: 1px solid #ccc; */
+    /* border-radius: 5px; */
+    /* text-align: center; */
+    /* margin: 10px */
+/* } */
+
+
+.input_field {
+    margin: 10px;
+    border-radius: 5px;
     font-size: 16px;
     border: 1px solid #ccc;
-    border-radius: 5px;
-    text-align: center;
+    height: 40px; /* Increase height for better centering */
+    width: 80%;
+    text-align: center; /* Center the placeholder text */
 }
+
+.input_field::placeholder {
+    text-align: center; /* Ensure placeholder is centered */
+    line-height: 40px;  /* Match the input height */
+}
+
 
 
 /* Bottom Section - FIXED */
