@@ -35,7 +35,6 @@ class GroupMembers(db.Model):
 class Chat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     chat_type = db.Column(db.String(10), nullable=False)  # 'single' or 'group'
-    chat_member_ids = db.Column(db.String, nullable=False)  # Comma-separated user IDs
     messages = db.relationship('ChatMessage', backref='chat', lazy=True)
 
 class ChatMembers(db.Model):
@@ -57,22 +56,35 @@ class WalletAccount(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=True)
     balance = db.Column(db.Float, nullable=False, default=0.0)
 
+class WalletAccountTransaction(db.Model):
+    transaction_type = db.Column(db.String(10), nullable=False)  # 'credit' or 'debit'
+    account_id = db.Column(db.Integer, db.ForeignKey('wallet_account.id'), primary_key=True)
+    amount = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+
 # RESTful API Resources
 class CreateSingleChat(Resource):
     def post(self):
         data = request.get_json()
         user_id = data.get('user_id')
-        chat = Chat(chat_type='single', chat_member_ids=str(user_id))
+        chat = Chat(chat_type='single')
         db.session.add(chat)
+        db.session.commit()
+        chat_member = ChatMembers(chat_id=chat.id, user_id=user_id)
+        db.session.add(chat_member)
         db.session.commit()
         return jsonify({"message": "Single chat created", "chat_id": chat.id})
 
 class CreateGroupChat(Resource):
     def post(self):
         data = request.get_json()
-        group_id = data.get('group_id')
-        chat = Chat(chat_type='group', chat_member_ids=','.join(map(str, group_id)))
+        user_ids = data.get('user_ids')
+        chat = Chat(chat_type='group')
         db.session.add(chat)
+        db.session.commit()
+        for user_id in user_ids:
+            chat_member = ChatMembers(chat_id=chat.id, user_id=user_id)
+            db.session.add(chat_member)
         db.session.commit()
         return jsonify({"message": "Group chat created", "chat_id": chat.id})
 
@@ -193,7 +205,6 @@ class SignGroupWithdrawalRequest(Resource):
         user_id = data.get('user_id')
         # Here you would typically handle the logic for signing the withdrawal request
         return jsonify({"message": "Withdrawal request signed"})
-
 
 # Register API resources
 api.add_resource(CreateSingleChat, '/api/chat/single')

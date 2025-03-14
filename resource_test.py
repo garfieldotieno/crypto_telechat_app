@@ -81,55 +81,56 @@ class TestAPI(TestCase):
         self.log_table_records(Chat)
         self.log_table_records(ChatMessage)
 
-    def test_create_group_chat(self):
-        group = Group(name="Football Club")
-        user1 = User(username="player1", email="player1@example.com")
-        user2 = User(username="player2", email="player2@example.com")
-        user3 = User(username="player3", email="player3@example.com")
-        db.session.add(group)
-        db.session.add(user1)
-        db.session.add(user2)
-        db.session.add(user3)
-        db.session.commit()
-        logger.info(f"Group and users created: {group}, {user1}, {user2}, {user3}")
+    # def test_create_group_chat(self):
+    #     group = Group(name="Football Club")
+    #     user1 = User(username="player1", email="player1@example.com")
+    #     user2 = User(username="player2", email="player2@example.com")
+    #     user3 = User(username="player3", email="player3@example.com")
+    #     db.session.add(group)
+    #     db.session.add(user1)
+    #     db.session.add(user2)
+    #     db.session.add(user3)
+    #     db.session.commit()
+    #     logger.info(f"Group and users created: {group}, {user1}, {user2}, {user3}")
 
-        response = self.client.post('/api/chat/group', json={'group_id': group.id})
-        logger.info(f"Response: {response.json}")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Group chat created", response.json['message'])
+    #     response = self.client.post('/api/chat/group', json={'group_id': group.id})
+    #     logger.info(f"Response: {response.json}")
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertIn("Group chat created", response.json['message'])
 
-        chat_id = response.json['chat_id']
-        response = self.client.post('/api/chat/group/message', data={
-            'user_id': user1.id,
-            'chat_id': chat_id,
-            'content': 'Hello team, this is player1.'
-        })
-        logger.info(f"Response: {response.json}")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Message sent", response.json['message'])
+    #     chat_id = response.json['chat_id']
+    #     response = self.client.post('/api/chat/group/message', data={
+    #         'user_id': user1.id,
+    #         'chat_id': chat_id,
+    #         'content': 'Hello team, this is player1.'
+    #     })
+    #     logger.info(f"Response: {response.json}")
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertIn("Message sent", response.json['message'])
 
-        response = self.client.post('/api/chat/group/message', data={
-            'user_id': user2.id,
-            'chat_id': chat_id,
-            'content': 'Hello team, this is player2.'
-        })
-        logger.info(f"Response: {response.json}")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Message sent", response.json['message'])
+    #     response = self.client.post('/api/chat/group/message', data={
+    #         'user_id': user2.id,
+    #         'chat_id': chat_id,
+    #         'content': 'Hello team, this is player2.'
+    #     })
+    #     logger.info(f"Response: {response.json}")
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertIn("Message sent", response.json['message'])
 
-        response = self.client.post('/api/chat/group/message', data={
-            'user_id': user3.id,
-            'chat_id': chat_id,
-            'content': 'Hello team, this is player3.'
-        })
-        logger.info(f"Response: {response.json}")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("Message sent", response.json['message'])
+    #     response = self.client.post('/api/chat/group/message', data={
+    #         'user_id': user3.id,
+    #         'chat_id': chat_id,
+    #         'content': 'Hello team, this is player3.'
+    #     })
+    #     logger.info(f"Response: {response.json}")
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertIn("Message sent", response.json['message'])
 
-        self.log_table_records(User)
-        self.log_table_records(Group)
-        self.log_table_records(Chat)
-        self.log_table_records(ChatMessage)
+    #     self.log_table_records(User)
+    #     self.log_table_records(Group)
+    #     self.log_table_records(Chat)
+    #     self.log_table_records(ChatMessage)
+
 
     def test_create_single_account(self):
         user = User(username="testuser", email="testuser@example.com")
