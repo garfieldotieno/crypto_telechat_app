@@ -62,7 +62,9 @@ let verify_identity_1_ui_structure = {
         }
     ],
     bottom_section: [
-        { visible: true, component_type: "button", label: "Proceed", action: "render_verify_identity_2" }
+        { visible: true, component_type: "button_stack", 
+          item_list: [{ item_type: "button", item_label: "Proceed", item_icon: "fa-solid fa-arrow-right", action: "render_verify_identity_2" }] 
+        }
     ]
 };
 
@@ -89,7 +91,9 @@ let verify_identity_2_ui_structure = {
         }
     ],
     bottom_section: [
-        { visible: true, component_type: "button", label: "Confirm", action: "confirm_code" }
+        { visible: true, component_type: "button_stack", 
+          item_list: [{ item_type: "button", item_label: "Confirm", item_icon: "fa-solid fa-arrow-right", action: "confirm_code" }] 
+        }
     ]
 };
 
@@ -232,14 +236,7 @@ function create_bottom_section(items) {
             
 
             section.appendChild(buttonContainer);
-        } else if (item.visible && item.component_type === "button") {
-            let button = document.createElement("button");
-            button.innerHTML = item.label;
-            button.classList.add("button_item");
-            button.setAttribute("onclick", `${item.action}()`);
-
-            section.appendChild(button);
-        }
+        } 
     });
 
     return section;
