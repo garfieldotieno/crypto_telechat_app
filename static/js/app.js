@@ -1,6 +1,6 @@
 function set_display() {
     console.log("calling set_display");
- 
+
     document.body.innerHTML = "";
 
     if (window.innerWidth < 777) {
@@ -42,16 +42,9 @@ let start_ui_structure = {
 
 let verify_identity_1_ui_structure = {
     top_section: [
-        { 
-            visible: true, 
-            component_type: "icon_label", 
-            icon: "fa-solid fa-arrow-left", 
-            label: "cancel", 
-            position: "left",
-            action: "render_start_interface" // Back to the start
-        },
-        { visible: false, component_type: "text", label: "Enter Details", position: "center" },
-        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "add", position: "right" }
+        { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_start_interface" },
+        { visible: true, component_type: "text", label: "Enter Details", position: "center" },
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
     ],
     middle_section: [
         { 
@@ -69,19 +62,11 @@ let verify_identity_1_ui_structure = {
     ]
 };
 
-
 let verify_identity_2_ui_structure = {
     top_section: [
-        { 
-            visible: true, 
-            component_type: "icon_label", 
-            icon: "fa-solid fa-arrow-left", 
-            label: "cancel", 
-            position: "left",
-            action: "render_verify_identity_1" // Back to previous step
-        },
-        { visible: false, component_type: "text", label: "Enter Confirmation Code", position: "center" },
-        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "add", position: "right" }
+        { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_verify_identity_1" },
+        { visible: true, component_type: "text", label: "Enter Confirmation Code", position: "center" },
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
     ],
     middle_section: [
         { 
@@ -93,11 +78,37 @@ let verify_identity_2_ui_structure = {
     ],
     bottom_section: [
         { visible: true, component_type: "button_stack", 
-          item_list: [{ item_type: "button", item_label: "Confirm", action: "confirm_code" }] 
+          item_list: [{ item_type: "button", item_label: "Confirm", action: "render_chat_listing" }] 
         }
     ]
 };
 
+let chat_listing_ui_structure = {
+    top_section: [  
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "back", position: "left" },
+        { visible: true, component_type: "text", label: "Chats", position: "center" },
+        { visible: true, component_type: "icon_label", icon: "fa-solid fa-pen-to-square", label: "add", position: "right" }
+    ],
+
+    middle_section: [
+        {
+            visible: true,
+            component_type: "list_pad",
+            item_list: [
+                { item_type: "list_item_search", placeholder: "search for members or users" },
+                { item_type: "list_item_wallet", label: "Wallet", balance: "$100.00", notification_badge: "3" },
+                { item_type: "list_item_chat", label: "Chat 1", last_message: "Hello, how are you?", notification_badge: "1" },
+                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
+                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
+                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
+                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
+                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" }
+            ]
+        }
+    ],
+
+    bottom_section: []
+};
 
 // 🛠️ Function to Create Top Section
 function create_top_section(items) {
@@ -122,7 +133,7 @@ function create_top_section(items) {
     items.forEach(item => {
         if (item.visible) {
             if (item.component_type === "icon_label") {
-                let iconHTML = ` <span class="content_holder">${item.label}</span>`;
+                let iconHTML = `<span class="content_holder"> ${item.label} </span>`;
 
                 if (item.position === "left") {
                     left_content.innerHTML = iconHTML;
@@ -133,12 +144,12 @@ function create_top_section(items) {
                         left_content.setAttribute("hx-get", `#`);
                         left_content.setAttribute("onclick", `${item.action}()`);
                     }
-                    
                 } else if (item.position === "right") {
-                    right_content.innerHTML = iconHTML;
+                    let iconHTML2 = `<span class="content_holder"> <i class="${item.icon}"></i> </span>`;
+                    right_content.innerHTML = iconHTML2;
                 }
             } else if (item.component_type === "text") {
-                title_content.innerHTML = `<span class="content_holder">${item.label}</span>`;
+                title_content.innerHTML = `<h3>${item.label}</h3>`;
             }
         }
     });
@@ -153,7 +164,6 @@ function create_top_section(items) {
 
     return section;
 }
-
 
 // 🛠️ Function to Create Middle Section
 function create_middle_section(items) {
@@ -180,6 +190,43 @@ function create_middle_section(items) {
                 `;
                 break;
 
+            case "list_pad":
+                element.classList.add("list_pad_container");
+                item.item_list.forEach(listItem => {
+                    let listItemElement = document.createElement("div");
+                    listItemElement.classList.add(listItem.item_type);
+
+                    switch (listItem.item_type) {
+                        case "list_item_search":
+                            listItemElement.innerHTML = `
+                                <div class="search_container">
+                                    <input type="text" placeholder="${listItem.placeholder}" class="search_input" />
+                                </div>
+                            `;
+                            break;
+
+                        case "list_item_wallet":
+                        case "list_item_chat":
+                            listItemElement.innerHTML = `
+                                <div class="list_item_container">
+                                    <div class="list_item_image"></div>
+                                    <div class="list_item_content">
+                                        <div class="list_item_title">${listItem.label}</div>
+                                        <p class="list_item_message">${listItem.last_message || listItem.balance}</p>
+                                    </div>
+                                    <div class="notification_badge">${listItem.notification_badge}</div>
+                                </div>
+                            `;
+                            break;
+
+                        default:
+                            console.warn(`Unknown list item type: ${listItem.item_type}`);
+                    }
+
+                    element.appendChild(listItemElement);
+                });
+                break;
+
             default:
                 console.warn(`Unknown component_type: ${item.component_type}`);
         }
@@ -189,7 +236,6 @@ function create_middle_section(items) {
 
     return section;
 }
-
 
 function setupPWAInstallButton(installButton) {
     let deferredPrompt; // Store install event for later use
@@ -228,25 +274,26 @@ function create_bottom_section(items) {
 
             item.item_list.forEach(btn => {
                 let button = document.createElement("button");
-                button.innerHTML = `${btn.item_label} <i class="${btn.item_icon}"></i>`;
+                button.innerHTML = btn.item_label;
                 button.classList.add("button_item");
                 button.setAttribute("onclick", `${btn.action}()`);
 
                 buttonContainer.appendChild(button);
             });
 
-            
-
             section.appendChild(buttonContainer);
-        } 
+        } else if (item.visible && item.component_type === "button") {
+            let button = document.createElement("button");
+            button.innerHTML = item.label;
+            button.classList.add("button_item");
+            button.setAttribute("onclick", `${item.action}()`);
+
+            section.appendChild(button);
+        }
     });
 
     return section;
 }
-
-
-
-
 
 // 🎨 Render Start Interface
 function render_start_interface() {
@@ -265,19 +312,18 @@ function render_start_interface() {
     centerContainer.classList.add(centerContainerClass);
     container.appendChild(centerContainer);
 
-    // centerContainer.appendChild(create_top_section(start_ui_structure.top_section));
+    // Conditionally render the top section based on the visible property
+    if (start_ui_structure.top_section.some(item => item.visible)) {
+        centerContainer.appendChild(create_top_section(start_ui_structure.top_section));
+    }
 
     // Create middle section and insert the install button
     let middleSection = create_middle_section(start_ui_structure.middle_section);
-    
-
     centerContainer.appendChild(middleSection);
     centerContainer.appendChild(create_bottom_section(start_ui_structure.bottom_section));
 
-	console.log("now adding the download button")
+    console.log("now adding the download button");
     let buttonContainer = document.getElementsByClassName("button_stack")[0]; // Get first matching element
-    
-    
 
     let install_btn = document.createElement("button");
     install_btn.innerHTML = `Download`;
@@ -285,9 +331,7 @@ function render_start_interface() {
     buttonContainer.appendChild(install_btn);
 
     setupPWAInstallButton(install_btn);
-
 }
-
 
 function render_verify_identity_1() {
     console.log("calling render_verify_identity_1");
@@ -311,7 +355,6 @@ function render_verify_identity_1() {
     centerContainer.appendChild(create_bottom_section(verify_identity_1_ui_structure.bottom_section));
 }
 
-
 function render_verify_identity_2() {
     console.log("calling render_verify_identity_2");
 
@@ -332,6 +375,29 @@ function render_verify_identity_2() {
     centerContainer.appendChild(create_top_section(verify_identity_2_ui_structure.top_section));
     centerContainer.appendChild(create_middle_section(verify_identity_2_ui_structure.middle_section));
     centerContainer.appendChild(create_bottom_section(verify_identity_2_ui_structure.bottom_section));
+}
+
+
+function render_chat_listing() {
+    console.log("calling render_chat_listing");
+
+    document.body.innerHTML = ""; // Clear previous content
+
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    // Build the UI sections dynamically
+    centerContainer.appendChild(create_top_section(chat_listing_ui_structure.top_section));
+    centerContainer.appendChild(create_middle_section(chat_listing_ui_structure.middle_section));
+    centerContainer.appendChild(create_bottom_section(chat_listing_ui_structure.bottom_section));
 }
 
 

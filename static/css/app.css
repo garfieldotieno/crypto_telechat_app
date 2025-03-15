@@ -34,11 +34,9 @@ body {
 /* On large screens, center & shrink */
 @media screen and (min-width: 777px) {
     .app_center_container_big {
-        width: 25%; /* 1/3 of the parent */
+        width: 30%; /* 1/3 of the parent */
         margin: 0 auto;
     }
-
-
 }
 
 /* Hide Elements */
@@ -79,10 +77,6 @@ body {
     top: 10px;
 }
 
-
-
-
-
 .title_content {
     display: grid;
     justify-content: center;
@@ -107,11 +101,10 @@ body {
 }
 
 .install-btn {
-	width: 80%;
-	border-radius: 10px;
-	height: 40px;	
+    width: 80%;
+    border-radius: 10px;
+    height: 40px;	
 }
-
 
 /* Input Field Styling */
 .input_container {
@@ -136,17 +129,6 @@ body {
     color: #ccc;
 }
 
-/* .input_container input { */
-    /* width: 100%; */
-    /* padding: 10px; */
-    /* font-size: 16px; */
-    /* border: 1px solid #ccc; */
-    /* border-radius: 5px; */
-    /* text-align: center; */
-    /* margin: 10px */
-/* } */
-
-
 .input_field {
     margin: 10px;
     border-radius: 5px;
@@ -161,8 +143,6 @@ body {
     text-align: center; /* Ensure placeholder is centered */
     line-height: 40px;  /* Match the input height */
 }
-
-
 
 /* Bottom Section - FIXED */
 .bottom_section {
@@ -203,3 +183,91 @@ body {
 .button_item:hover {
     background-color: #0056b3;
 }
+
+/* List Pad Container */
+.list_pad_container {
+    width: 100%;
+    margin-top: 0; /* Ensure it is immediately below the top_section */
+    position: relative;
+    bottom: -1%;
+}
+
+/* List Item Search */
+.list_item_search .search_container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff;
+    color: black;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    width: 100%;
+    height: 60px; /* Ensure all list items have the same height */
+}
+
+.search_input {
+    width: 80%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* List Item Wallet and Chat */
+.list_item_wallet, .list_item_chat {
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    color: black;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    height: 60px; /* Ensure all list items have the same height */
+}
+
+.list_item_container {
+    display: grid;
+    grid-template-columns: 30% 50% 20%;
+    align-items: center;
+    width: 100%;
+}
+
+.list_item_image {
+    width: 40px;
+    height: 40px;
+    background-color: #ccc;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.list_item_content {
+    display: flex;
+    flex-direction: column;
+}
+
+.list_item_title {
+    font-weight: bold;
+}
+
+.list_item_message {
+    font-size: 14px;
+    color: #666;
+}
+
+.notification_badge {
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    width: 24px; /* Set a fixed width */
+    height: 24px; /* Set a fixed height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    text-align: center;
+    padding: 0; /* Remove padding to ensure circular shape */
+}
+
+
