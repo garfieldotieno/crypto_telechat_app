@@ -34,10 +34,11 @@ let start_ui_structure = {
     ],
     bottom_section: [
         { visible: true, component_type: "button_stack", 
-          item_list: [{ item_type: "button", item_label: "Proceed", item_icon: "fa-solid fa-arrow-right", action: "render_verify_identity_1" }] 
+          item_list: [{ item_type: "button", item_label: "Proceed", action: "render_verify_identity_1" }] 
         }
     ]
 };
+
 
 let verify_identity_1_ui_structure = {
     top_section: [
@@ -45,11 +46,11 @@ let verify_identity_1_ui_structure = {
             visible: true, 
             component_type: "icon_label", 
             icon: "fa-solid fa-arrow-left", 
-            label: "Back", 
+            label: "cancel", 
             position: "left",
             action: "render_start_interface" // Back to the start
         },
-        { visible: true, component_type: "text", label: "Enter Details", position: "center" },
+        { visible: false, component_type: "text", label: "Enter Details", position: "center" },
         { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "add", position: "right" }
     ],
     middle_section: [
@@ -63,7 +64,7 @@ let verify_identity_1_ui_structure = {
     ],
     bottom_section: [
         { visible: true, component_type: "button_stack", 
-          item_list: [{ item_type: "button", item_label: "Proceed", item_icon: "fa-solid fa-arrow-right", action: "render_verify_identity_2" }] 
+          item_list: [{ item_type: "button", item_label: "Proceed", action: "render_verify_identity_2" }] 
         }
     ]
 };
@@ -75,11 +76,11 @@ let verify_identity_2_ui_structure = {
             visible: true, 
             component_type: "icon_label", 
             icon: "fa-solid fa-arrow-left", 
-            label: "Back", 
+            label: "cancel", 
             position: "left",
             action: "render_verify_identity_1" // Back to previous step
         },
-        { visible: true, component_type: "text", label: "Enter Confirmation Code", position: "center" },
+        { visible: false, component_type: "text", label: "Enter Confirmation Code", position: "center" },
         { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "add", position: "right" }
     ],
     middle_section: [
@@ -92,7 +93,7 @@ let verify_identity_2_ui_structure = {
     ],
     bottom_section: [
         { visible: true, component_type: "button_stack", 
-          item_list: [{ item_type: "button", item_label: "Confirm", item_icon: "fa-solid fa-arrow-right", action: "confirm_code" }] 
+          item_list: [{ item_type: "button", item_label: "Confirm", action: "confirm_code" }] 
         }
     ]
 };
@@ -121,7 +122,7 @@ function create_top_section(items) {
     items.forEach(item => {
         if (item.visible) {
             if (item.component_type === "icon_label") {
-                let iconHTML = `<i class="${item.icon}"></i> ${item.label}`;
+                let iconHTML = ` <span class="content_holder">${item.label}</span>`;
 
                 if (item.position === "left") {
                     left_content.innerHTML = iconHTML;
@@ -132,11 +133,12 @@ function create_top_section(items) {
                         left_content.setAttribute("hx-get", `#`);
                         left_content.setAttribute("onclick", `${item.action}()`);
                     }
+                    
                 } else if (item.position === "right") {
                     right_content.innerHTML = iconHTML;
                 }
             } else if (item.component_type === "text") {
-                title_content.innerHTML = `<h3>${item.label}</h3>`;
+                title_content.innerHTML = `<span class="content_holder">${item.label}</span>`;
             }
         }
     });
@@ -263,7 +265,7 @@ function render_start_interface() {
     centerContainer.classList.add(centerContainerClass);
     container.appendChild(centerContainer);
 
-    centerContainer.appendChild(create_top_section(start_ui_structure.top_section));
+    // centerContainer.appendChild(create_top_section(start_ui_structure.top_section));
 
     // Create middle section and insert the install button
     let middleSection = create_middle_section(start_ui_structure.middle_section);
@@ -278,7 +280,7 @@ function render_start_interface() {
     
 
     let install_btn = document.createElement("button");
-    install_btn.innerHTML = `Download <i class="fa-solid fa-download"></i>`;
+    install_btn.innerHTML = `Download`;
     install_btn.classList.add("button_item");
     buttonContainer.appendChild(install_btn);
 
