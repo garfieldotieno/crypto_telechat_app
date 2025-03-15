@@ -39,7 +39,6 @@ let start_ui_structure = {
     ]
 };
 
-
 let verify_identity_1_ui_structure = {
     top_section: [
         { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_start_interface" },
@@ -99,10 +98,68 @@ let chat_listing_ui_structure = {
                 { item_type: "list_item_wallet", label: "Wallet", balance: "$100.00", notification_badge: "3" },
                 { item_type: "list_item_chat", label: "Chat 1", last_message: "Hello, how are you?", notification_badge: "1" },
                 { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" }
+                { item_type: "navbar", item_list: [
+                    { item_type: "navbar_item", icon: "fa-solid fa-comments", label: "Chats" },
+                    { item_type: "navbar_item", icon: "fa-solid fa-user", label: "Profile" },
+                    { item_type: "navbar_item", icon: "fa-solid fa-address-book", label: "Contacts" }
+                ]}
+            ]
+        }
+    ],
+
+    bottom_section: []
+};
+
+let contact_listing_ui_structure = {
+    top_section: [  
+        { visible: false, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "back", position: "left" },
+        { visible: true, component_type: "text", label: "Contacts", position: "center" },
+        { visible: true, component_type: "icon_label", icon: "fa-solid fa-pen-to-square", label: "add", position: "right" }
+    ],
+
+    middle_section: [
+        {
+            visible: true,
+            component_type: "list_pad",
+            item_list: [
+                { item_type: "list_item_search", placeholder: "search for members or users" },
+                { item_type: "list_item_contact", label: "Contact 1", status: "online" },
+                { item_type: "list_item_contact", label: "Contact 2", status: "last seen recently" },
+                { item_type: "navbar", item_list: [
+                    { item_type: "navbar_item", icon: "fa-solid fa-comments", label: "Chats" },
+                    { item_type: "navbar_item", icon: "fa-solid fa-user", label: "Profile" },
+                    { item_type: "navbar_item", icon: "fa-solid fa-address-book", label: "Contacts" }
+                ]}
+            ]
+        }
+    ],
+
+    bottom_section: []
+};
+
+
+let personal_profile_ui_structure = {
+    top_section: [
+        { visible: true, component_type: "icon_label", icon: "", label: "Cancel", position: "left", action: "render_chat_listing" },
+        { visible: true, component_type: "text", label: "Profile", position: "center" },
+        { visible: false, component_type: "icon_label", icon: "", label: "", position: "right" }
+    ],
+
+    middle_section: [
+        {
+            visible: true,
+            component_type: "profile_info",
+            item_list: [
+                { item_type: "profile_image", src: "path/to/profile_image.jpg" },
+                { item_type: "profile_details", username: "Username", wallet_address: "Wallet Address" }
+            ]
+        },
+        {
+            visible: true,
+            component_type: "button_container",
+            item_list: [
+                { item_type: "button", item_label: "App Lock", class: "button_item" },
+                { item_type: "button", item_label: "Wallet", class: "button_item" }
             ]
         }
     ],
@@ -217,6 +274,73 @@ function create_middle_section(items) {
                                     <div class="notification_badge">${listItem.notification_badge}</div>
                                 </div>
                             `;
+                            break;
+
+                        case "list_item_contact":
+                            listItemElement.innerHTML = `
+                                <div class="list_item_container">
+                                    <div class="list_item_image"></div>
+                                    <div class="list_item_content">
+                                        <div class="list_item_title">${listItem.label}</div>
+                                        <p class="list_item_message" style="color: ${listItem.status === 'online' ? '#037EE5' : '#666'};">${listItem.status}</p>
+                                    </div>
+                                </div>
+                            `;
+                            break;
+
+                        case "navbar":
+                            listItemElement.classList.add("navbar_container");
+                            listItem.item_list.forEach(navItem => {
+                                let navItemElement = document.createElement("div");
+                                navItemElement.classList.add("navbar_item");
+                                navItemElement.innerHTML = `
+                                    <i class="${navItem.icon}"></i>
+                                    <span>${navItem.label}</span>
+                                `;
+                                // Add htmx attributes for navigation
+                                if (navItem.label === "Chats") {
+                                    navItemElement.setAttribute("hx-get", "#");
+                                    navItemElement.setAttribute("onclick", "render_chat_listing()");
+                                } else if (navItem.label === "Profile") {
+                                    navItemElement.setAttribute("hx-get", "#");
+                                    navItemElement.setAttribute("onclick", "render_personal_profile()");
+                                } else if (navItem.label === "Contacts") {
+                                    navItemElement.setAttribute("hx-get", "#");
+                                    navItemElement.setAttribute("onclick", "render_contact_listing()");
+                                }
+                                listItemElement.appendChild(navItemElement);
+                            });
+                            break;
+
+                        case "profile_info":
+                            listItemElement.classList.add("profile_info_container");
+                            listItem.item_list.forEach(profileItem => {
+                                if (profileItem.item_type === "profile_image") {
+                                    listItemElement.innerHTML += `
+                                        <div class="profile_image_container">
+                                            <img src="${profileItem.src}" class="profile_image" />
+                                        </div>
+                                    `;
+                                } else if (profileItem.item_type === "profile_details") {
+                                    listItemElement.innerHTML += `
+                                        <div class="profile_details_container">
+                                            <div class="profile_username">${profileItem.username}</div>
+                                            <div class="profile_wallet_address">${profileItem.wallet_address}</div>
+                                        </div>
+                                    `;
+                                }
+                            });
+                            break;
+
+                        case "button_container":
+                            listItemElement.classList.add("button_container");
+                            listItem.item_list.forEach(buttonItem => {
+                                listItemElement.innerHTML += `
+                                    <div class="button_item_container">
+                                        <button class="${buttonItem.class}">${buttonItem.item_label}</button>
+                                    </div>
+                                `;
+                            });
                             break;
 
                         default:
@@ -377,7 +501,6 @@ function render_verify_identity_2() {
     centerContainer.appendChild(create_bottom_section(verify_identity_2_ui_structure.bottom_section));
 }
 
-
 function render_chat_listing() {
     console.log("calling render_chat_listing");
 
@@ -398,6 +521,51 @@ function render_chat_listing() {
     centerContainer.appendChild(create_top_section(chat_listing_ui_structure.top_section));
     centerContainer.appendChild(create_middle_section(chat_listing_ui_structure.middle_section));
     centerContainer.appendChild(create_bottom_section(chat_listing_ui_structure.bottom_section));
+}
+
+function render_contact_listing() {
+    console.log("calling render_contact_listing");
+
+    document.body.innerHTML = ""; // Clear previous content
+
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    // Build the UI sections dynamically
+    centerContainer.appendChild(create_top_section(contact_listing_ui_structure.top_section));
+    centerContainer.appendChild(create_middle_section(contact_listing_ui_structure.middle_section));
+    centerContainer.appendChild(create_bottom_section(contact_listing_ui_structure.bottom_section));
+}
+
+
+function render_personal_profile() {
+    console.log("calling render_personal_profile");
+
+    document.body.innerHTML = ""; // Clear previous content
+
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    // Build the UI sections dynamically
+    centerContainer.appendChild(create_top_section(personal_profile_ui_structure.top_section));
+    centerContainer.appendChild(create_middle_section(personal_profile_ui_structure.middle_section));
+    centerContainer.appendChild(create_bottom_section(personal_profile_ui_structure.bottom_section));
 }
 
 
