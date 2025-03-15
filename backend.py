@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api, Resource
 from werkzeug.utils import secure_filename
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 
 app = Flask(__name__)
@@ -233,8 +234,9 @@ def manifest():
 def service_worker():
     return send_from_directory("static", "sw.js", mimetype="application/javascript")
 
-
-if __name__ == '__main__':
+# Ensure the app runs properly on Vercel
+if __name__ == "__main__":
+    app.wsgi_app = ProxyFix(app.wsgi_app)
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     with app.app_context():
