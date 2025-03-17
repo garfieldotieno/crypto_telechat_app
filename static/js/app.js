@@ -421,7 +421,7 @@ function create_bottom_section(items) {
     return section;
 }
 
-const registerd_state = true;
+const registerd_state = false;
 
 // 🎨 Render Start Interface
 function render_start_interface() {
