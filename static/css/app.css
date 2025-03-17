@@ -52,6 +52,11 @@ body {
     color: #037EE5;
 }
 
+.top_title{
+    color:black;
+    font-weight: 500;
+}
+
 /* Content Container */
 .content_container {
     display: grid;
@@ -100,10 +105,15 @@ body {
     display: block;
 }
 
+/* Install Button */
 .install-btn {
     width: 80%;
     border-radius: 10px;
-    height: 40px;	
+    height: 40px;
+    margin-top: 10px;
+    position: sticky;
+    bottom: 50px; /* Adjust based on the height of the navbar */
+    z-index: 1;
 }
 
 /* Input Field Styling */
@@ -187,21 +197,32 @@ body {
 /* List Pad Container */
 .list_pad_container {
     width: 100%;
-    margin-top: 0; /* Ensure it is immediately below the top_section */
+    flex-grow: 1; /* Allow it to expand to fill available space */
+    overflow-y: auto; /* Make it scrollable when content overflows */
+    display: flex;
+    flex-direction: column;
 }
 
 /* List Item Search */
-.list_item_search .search_container {
+.list_item_search  {
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: #ffffff;
     color: black;
-    padding: 10px;
+    padding: 0px;
     margin-bottom: 10px;
     border-radius: 5px;
     width: 100%;
     height: 60px; /* Ensure all list items have the same height */
+}
+
+.search_container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
 }
 
 .search_input {
@@ -280,6 +301,9 @@ body {
     padding: 10px 0;
     width: 100%;
     border-top: 1px solid #ccc; /* Optional: Add a top border for separation */
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
 }
 
 /* Navbar Item */

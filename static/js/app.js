@@ -84,9 +84,9 @@ let verify_identity_2_ui_structure = {
 
 let chat_listing_ui_structure = {
     top_section: [  
-        { visible: false, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "back", position: "left" },
+        { visible: true, component_type: "icon_label", icon: "fa-regular fa-arrow-left", label: "Edit", position: "left" },
         { visible: true, component_type: "text", label: "Chats", position: "center" },
-        { visible: true, component_type: "icon_label", icon: "fa-solid fa-pen-to-square", label: "add", position: "right" }
+        { visible: true, component_type: "icon_label", icon: "fa-regular fa-pen-to-square", label: "add", position: "right" }
     ],
 
     middle_section: [
@@ -98,6 +98,8 @@ let chat_listing_ui_structure = {
                 { item_type: "list_item_wallet", label: "Wallet", balance: "$100.00", notification_badge: "3" },
                 { item_type: "list_item_chat", label: "Chat 1", last_message: "Hello, how are you?", notification_badge: "1" },
                 { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
+                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
+                
                 { item_type: "navbar", item_list: [
                     { item_type: "navbar_item", icon: "fa-solid fa-comments", label: "Chats" },
                     { item_type: "navbar_item", icon: "fa-solid fa-user", label: "Profile" },
@@ -112,9 +114,9 @@ let chat_listing_ui_structure = {
 
 let contact_listing_ui_structure = {
     top_section: [  
-        { visible: false, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "back", position: "left" },
+        { visible: false, component_type: "icon_label", icon: "fa-regular fa-arrow-left", label: "back", position: "left" },
         { visible: true, component_type: "text", label: "Contacts", position: "center" },
-        { visible: true, component_type: "icon_label", icon: "fa-solid fa-pen-to-square", label: "add", position: "right" }
+        { visible: true, component_type: "icon_label", icon: "fa-regular fa-pen-to-square", label: "add", position: "right" }
     ],
 
     middle_section: [
@@ -206,7 +208,7 @@ function create_top_section(items) {
                     right_content.innerHTML = iconHTML2;
                 }
             } else if (item.component_type === "text") {
-                title_content.innerHTML = `<h3>${item.label}</h3>`;
+                title_content.innerHTML = `<h3 class="top_title">${item.label}</h3>`;
             }
         }
     });
@@ -419,9 +421,16 @@ function create_bottom_section(items) {
     return section;
 }
 
+const registerd_state = true;
+
 // 🎨 Render Start Interface
 function render_start_interface() {
     console.log("calling render_start_interface");
+
+    if (registerd_state) {
+        render_chat_listing();
+        return;
+    }
 
     document.body.innerHTML = "";
 
@@ -441,20 +450,38 @@ function render_start_interface() {
         centerContainer.appendChild(create_top_section(start_ui_structure.top_section));
     }
 
-    // Create middle section and insert the install button
+    // Create middle section
     let middleSection = create_middle_section(start_ui_structure.middle_section);
     centerContainer.appendChild(middleSection);
     centerContainer.appendChild(create_bottom_section(start_ui_structure.bottom_section));
 
-    console.log("now adding the download button");
-    let buttonContainer = document.getElementsByClassName("button_stack")[0]; // Get first matching element
+    // Check if the app is already installed
+    window.addEventListener('appinstalled', (event) => {
+        console.log('PWA was installed');
+        // Remove the install button if the app is already installed
+        let installButton = document.getElementById('install_button');
+        if (installButton) {
+            installButton.remove();
+        }
+    });
 
-    let install_btn = document.createElement("button");
-    install_btn.innerHTML = `Download`;
-    install_btn.classList.add("button_item");
-    buttonContainer.appendChild(install_btn);
+    // Create and insert the install button if the app is not installed
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+        console.log("now adding the download button");
+        let buttonContainer = document.getElementsByClassName("button_stack")[0]; // Get first matching element
 
-    setupPWAInstallButton(install_btn);
+        let install_btn = document.createElement("button");
+        install_btn.id = 'install_button';
+        install_btn.innerHTML = `Install`;
+        install_btn.classList.add("button_item");
+        // can we app margin of 10px below
+        install_btn.style.marginTop = "10px";
+
+        buttonContainer.appendChild(install_btn);
+        
+
+        setupPWAInstallButton(install_btn);
+    }
 }
 
 function render_verify_identity_1() {
@@ -521,6 +548,36 @@ function render_chat_listing() {
     centerContainer.appendChild(create_top_section(chat_listing_ui_structure.top_section));
     centerContainer.appendChild(create_middle_section(chat_listing_ui_structure.middle_section));
     centerContainer.appendChild(create_bottom_section(chat_listing_ui_structure.bottom_section));
+
+    // Check if the app is already installed
+    window.addEventListener('appinstalled', (event) => {
+        console.log('PWA was installed');
+        // Remove the install button if the app is already installed
+        let installButton = document.getElementById('install_button');
+        if (installButton) {
+            installButton.remove();
+        }
+    });
+
+    // Create and insert the install button if the app is not installed
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+        console.log("now adding the download button");
+        let buttonContainer = document.createElement("div");
+        buttonContainer.classList.add("button_stack");
+        centerContainer.appendChild(buttonContainer);
+
+        let install_btn = document.createElement("button");
+        install_btn.id = 'install_button';
+        install_btn.innerHTML = `Install`;
+        install_btn.classList.add("button_item");
+
+        // can we app margin of 10px below
+        install_btn.style.marginTop = "10px";
+
+        buttonContainer.appendChild(install_btn);
+
+        setupPWAInstallButton(install_btn);
+    }
 }
 
 function render_contact_listing() {
@@ -543,6 +600,36 @@ function render_contact_listing() {
     centerContainer.appendChild(create_top_section(contact_listing_ui_structure.top_section));
     centerContainer.appendChild(create_middle_section(contact_listing_ui_structure.middle_section));
     centerContainer.appendChild(create_bottom_section(contact_listing_ui_structure.bottom_section));
+
+    // Check if the app is already installed
+    window.addEventListener('appinstalled', (event) => {
+        console.log('PWA was installed');
+        // Remove the install button if the app is already installed
+        let installButton = document.getElementById('install_button');
+        if (installButton) {
+            installButton.remove();
+        }
+    });
+
+    // Create and insert the install button if the app is not installed
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+        console.log("now adding the download button");
+        let buttonContainer = document.createElement("div");
+        buttonContainer.classList.add("button_stack");
+        centerContainer.appendChild(buttonContainer);
+
+        let install_btn = document.createElement("button");
+        install_btn.id = 'install_button';
+        install_btn.innerHTML = `Install`;
+        install_btn.classList.add("button_item");
+
+        // can we app margin of 10px below
+        install_btn.style.marginTop = "10px";
+
+        buttonContainer.appendChild(install_btn);
+
+        setupPWAInstallButton(install_btn);
+    }
 }
 
 
@@ -566,6 +653,36 @@ function render_personal_profile() {
     centerContainer.appendChild(create_top_section(personal_profile_ui_structure.top_section));
     centerContainer.appendChild(create_middle_section(personal_profile_ui_structure.middle_section));
     centerContainer.appendChild(create_bottom_section(personal_profile_ui_structure.bottom_section));
+
+    // Check if the app is already installed
+    window.addEventListener('appinstalled', (event) => {
+        console.log('PWA was installed');
+        // Remove the install button if the app is already installed
+        let installButton = document.getElementById('install_button');
+        if (installButton) {
+            installButton.remove();
+        }
+    });
+
+    // Create and insert the install button if the app is not installed
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+        console.log("now adding the download button");
+        let buttonContainer = document.createElement("div");
+        buttonContainer.classList.add("button_stack");
+        centerContainer.appendChild(buttonContainer);
+
+        let install_btn = document.createElement("button");
+        install_btn.id = 'install_button';
+        install_btn.innerHTML = `Install`;
+        install_btn.classList.add("button_item");
+
+        // can we app margin of 10px below
+        install_btn.style.marginTop = "10px";
+        
+        buttonContainer.appendChild(install_btn);
+
+        setupPWAInstallButton(install_btn);
+    }
 }
 
 
