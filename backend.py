@@ -137,7 +137,7 @@ class CreateUser(Resource):
     def post(self):
         data = request.get_json()
 
-        print(f"calling create user, with data : {data}")
+        print(f"\ncalling create user, with data : {data}")
 
         username = data.get('username')
         email = data.get('email')

@@ -42,7 +42,7 @@ class TestAPI(TestCase):
         else:
             logger.info(f"\nNo records found in table: {model.__tablename__}\n")
 
-    def test_create_two_users(self):
+    def test_create_2_users(self):
         # Create two users by fetching name from the images [aku.jpeg, samurai.jpeg] in test_media folder
         # generate username and email from the extracted name, then proceed to generate the otp
 
@@ -81,20 +81,28 @@ class TestAPI(TestCase):
         samurai_verified = verify_otp(samurai_email, samurai_otp)
         logger.info(f"Verified otp: {aku_verified}, {samurai_verified}")
         
-        # create users
-        aku_user = User(username=aku_username, email=aku_email, otp_secret=aku_otp)
-        samurai_user = User(username=samurai_username, email=samurai_email, otp_secret=samurai_otp)
-        db.session.add(aku_user)
-        db.session.add(samurai_user)
-        db.session.commit()
+        # create users via API
+        aku_response = self.client.post('/api/user', json={
+            'username': aku_username,
+            'email': aku_email,
+            'otp': aku_otp
+        })
+        samurai_response = self.client.post('/api/user', json={
+            'username': samurai_username,
+            'email': samurai_email,
+            'otp': samurai_otp
+        })
+        
+        self.assertEqual(aku_response.status_code, 201)
+        self.assertEqual(samurai_response.status_code, 201)
+        
+        logger.info(f"Aku user creation response: {aku_response.get_json()}")
+        logger.info(f"Samurai user creation response: {samurai_response.get_json()}")
         
         self.log_table_records(User)
 
-    def test_create_group(self):
+    def test_create_group_of_6_users(self):
         pass 
 
-    
-
-    
 if __name__ == '__main__':
     unittest.main()
