@@ -34,7 +34,7 @@ body {
 /* On large screens, center & shrink */
 @media screen and (min-width: 777px) {
     .app_center_container_big {
-        width: 25%; /* 1/3 of the parent */
+        width: 33.333%; /* 1/3 of the parent */
         margin: 0 auto;
     }
 }
@@ -278,7 +278,7 @@ body {
 }
 
 .notification_badge {
-    background-color: red;
+    background-color: #037EE5;
     color: white;
     border-radius: 50%;
     width: 24px; /* Set a fixed width */
@@ -325,4 +325,12 @@ body {
 
 .navbar_item span {
     font-size: 12px; /* Adjust label size */
+}
+
+.profile_info_container {
+    width:100%;
+}
+
+.button_container{
+    width:100%;
 }

@@ -14,12 +14,12 @@ function set_display() {
 
 function render_small_screen_view() {
     console.log("calling render_small_screen_view");
-    render_start_interface();
+    step_navigation("start");
 }
 
 function render_big_screen_view() {
     console.log("calling render_big_screen_view");
-    render_start_interface();
+    step_navigation("start");
 }
 
 // 🎯 Object-Based UI Structure (Renamed to start_ui_structure)
@@ -34,14 +34,14 @@ let start_ui_structure = {
     ],
     bottom_section: [
         { visible: true, component_type: "button_stack", 
-          item_list: [{ item_type: "button", item_label: "Proceed", action: "render_verify_identity_1" }] 
+          item_list: [{ item_type: "button", item_label: "Proceed", action: "step_navigation('verify_identity_1')" }] 
         }
     ]
 };
 
 let verify_identity_1_ui_structure = {
     top_section: [
-        { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_start_interface" },
+        { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "step_navigation('start')" },
         { visible: true, component_type: "text", label: "Enter Details", position: "center" },
         { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
     ],
@@ -49,21 +49,29 @@ let verify_identity_1_ui_structure = {
         { 
             visible: true, 
             component_type: "input_field", 
-            label: "Your Phone", 
-            country: "Kenya", 
-            placeholder: "Your phone number"
+            label: "Your Email", 
+            country: get_country(), 
+            placeholder: "Your email address"
         }
     ],
     bottom_section: [
         { visible: true, component_type: "button_stack", 
-          item_list: [{ item_type: "button", item_label: "Proceed", action: "render_verify_identity_2" }] 
+          item_list: [{ item_type: "button", item_label: "Proceed", action: "step_navigation('verify_identity_2')" }] 
         }
     ]
 };
 
+function get_country(){
+    let userCountry = new Intl.DateTimeFormat('en', { timeZoneName: 'long' }).resolvedOptions().timeZone;
+    console.log("User Time Zone:", userCountry);
+    return userCountry;
+}
+
+
+
 let verify_identity_2_ui_structure = {
     top_section: [
-        { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_verify_identity_1" },
+        { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "step_navigation('verify_identity_1')" },
         { visible: true, component_type: "text", label: "Enter Confirmation Code", position: "center" },
         { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
     ],
@@ -72,19 +80,24 @@ let verify_identity_2_ui_structure = {
             visible: true, 
             component_type: "input_field", 
             label: "Confirmation Code", 
-            placeholder: "Enter the code sent to your phone"
+            placeholder: "Enter the code sent to your email"
         }
     ],
     bottom_section: [
         { visible: true, component_type: "button_stack", 
-          item_list: [{ item_type: "button", item_label: "Confirm", action: "render_chat_listing" }] 
+          item_list: [{ item_type: "button", item_label: "Confirm", action: "step_navigation('chat_listing')" }] 
         }
     ]
 };
 
+
+
+
+
+
 let chat_listing_ui_structure = {
     top_section: [  
-        { visible: true, component_type: "icon_label", icon: "fa-regular fa-arrow-left", label: "Edit", position: "left" },
+        { visible: false, component_type: "icon_label", icon: "fa-regular fa-arrow-left", label: "Edit", position: "left" },
         { visible: true, component_type: "text", label: "Chats", position: "center" },
         { visible: true, component_type: "icon_label", icon: "fa-regular fa-pen-to-square", label: "add", position: "right" }
     ],
@@ -248,6 +261,41 @@ function create_middle_section(items) {
                     <input type="text" placeholder="${item.placeholder}" class="input_field" />
                 `;
                 break;
+            
+            case "profile_info":
+                console.log('reached rendering profile_info component, should be inside list_pad_container');
+
+                element.classList.add("profile_info_container");
+                item.item_list.forEach(profileItem => {
+                    if (profileItem.item_type === "profile_image") {
+                        element.innerHTML += `
+                            <div class="profile_image_container">
+                                <img src="${profileItem.src}" class="profile_image" />
+                            </div>
+                        `;
+                    } else if (profileItem.item_type === "profile_details") {
+                        element.innerHTML += `
+                            <div class="profile_details_container">
+                                <div class="profile_username">${profileItem.username}</div>
+                                <div class="profile_wallet_address">${profileItem.wallet_address}</div>
+                            </div>
+                        `;
+                    }
+                });
+                break;
+    
+            case "button_container":
+                console.log('reached rendering button_container component, should be inside the list_pad_container');
+
+                element.classList.add("button_container");
+                item.item_list.forEach(buttonItem => {
+                    element.innerHTML += `
+                        <div class="button_item_container">
+                            <button class="${buttonItem.class}">${buttonItem.item_label}</button>
+                        </div>
+                    `;
+                });
+                break;
 
             case "list_pad":
                 element.classList.add("list_pad_container");
@@ -265,6 +313,19 @@ function create_middle_section(items) {
                             break;
 
                         case "list_item_wallet":
+                            listItemElement.innerHTML = `
+                                <div class="list_item_container">
+                                    <div class="list_item_image"></div>
+                                    <div class="list_item_content">
+                                        <div class="list_item_title">${listItem.label}</div>
+                                        <p class="list_item_message">${listItem.balance}
+                                    </div>
+                                    <div class="notification_badge">${listItem.notification_badge}</div>
+                                </div>
+                            `
+                            
+                            listItemElement.setAttribute("onclick", "render_wallet_interface()");
+
                         case "list_item_chat":
                             listItemElement.innerHTML = `
                                 <div class="list_item_container">
@@ -276,6 +337,9 @@ function create_middle_section(items) {
                                     <div class="notification_badge">${listItem.notification_badge}</div>
                                 </div>
                             `;
+
+                            
+                            listItemElement.setAttribute("onclick", "render_chat_interface()");
                             break;
 
                         case "list_item_contact":
@@ -288,6 +352,8 @@ function create_middle_section(items) {
                                     </div>
                                 </div>
                             `;
+                            
+                            listItemElement.setAttribute("onclick", "render_other_interface()");
                             break;
 
                         case "navbar":
@@ -314,37 +380,7 @@ function create_middle_section(items) {
                             });
                             break;
 
-                        case "profile_info":
-                            listItemElement.classList.add("profile_info_container");
-                            listItem.item_list.forEach(profileItem => {
-                                if (profileItem.item_type === "profile_image") {
-                                    listItemElement.innerHTML += `
-                                        <div class="profile_image_container">
-                                            <img src="${profileItem.src}" class="profile_image" />
-                                        </div>
-                                    `;
-                                } else if (profileItem.item_type === "profile_details") {
-                                    listItemElement.innerHTML += `
-                                        <div class="profile_details_container">
-                                            <div class="profile_username">${profileItem.username}</div>
-                                            <div class="profile_wallet_address">${profileItem.wallet_address}</div>
-                                        </div>
-                                    `;
-                                }
-                            });
-                            break;
-
-                        case "button_container":
-                            listItemElement.classList.add("button_container");
-                            listItem.item_list.forEach(buttonItem => {
-                                listItemElement.innerHTML += `
-                                    <div class="button_item_container">
-                                        <button class="${buttonItem.class}">${buttonItem.item_label}</button>
-                                    </div>
-                                `;
-                            });
-                            break;
-
+                        
                         default:
                             console.warn(`Unknown list item type: ${listItem.item_type}`);
                     }
@@ -352,6 +388,8 @@ function create_middle_section(items) {
                     element.appendChild(listItemElement);
                 });
                 break;
+            
+            
 
             default:
                 console.warn(`Unknown component_type: ${item.component_type}`);
@@ -402,7 +440,7 @@ function create_bottom_section(items) {
                 let button = document.createElement("button");
                 button.innerHTML = btn.item_label;
                 button.classList.add("button_item");
-                button.setAttribute("onclick", `${btn.action}()`);
+                button.setAttribute("onclick", btn.action);
 
                 buttonContainer.appendChild(button);
             });
@@ -412,7 +450,7 @@ function create_bottom_section(items) {
             let button = document.createElement("button");
             button.innerHTML = item.label;
             button.classList.add("button_item");
-            button.setAttribute("onclick", `${item.action}()`);
+            button.setAttribute("onclick", item.action);
 
             section.appendChild(button);
         }
@@ -421,13 +459,153 @@ function create_bottom_section(items) {
     return section;
 }
 
-const registerd_state = false;
+function step_navigation(step) {
+    console.log(`calling step_navigation, for step : ${step}`);
+
+    // Check if localStorage is supported
+    if (typeof(Storage) !== "undefined") {
+        // Initialize localStorage during the "start" step
+        if (step === "start") {
+            if (!localStorage.getItem("appData")) {
+                const appData = {
+                    current_step:"start",
+                    start_data: {input: null},
+                    verify_identity_1_data: {},
+                    verify_identity_2_data: {},
+                    registered_state: false,
+                    chat_listing_data: {},
+                    contact_listing_data: {},
+                    personal_profile_data: {},
+                };
+                localStorage.setItem("appData", encodeData(appData));
+            }
+        }
+
+        // Update current_step in localStorage
+        const appData = decodeData(localStorage.getItem("appData"));
+        appData.current_step = step;
+        localStorage.setItem("appData", encodeData(appData));
+    } else {
+        console.warn("LocalStorage is not supported by this browser.");
+    }
+
+    switch (step) {
+        case "start":
+            render_start_interface();
+            break;
+
+        case "verify_identity_1":
+            console.log("calling verify_identity_1");
+
+            const curr_app_data = decodeData(localStorage.getItem("appData"));
+            console.log("current app data is: ", curr_app_data);
+            curr_app_data.current_step = "verify_identity_1";
+            localStorage.setItem("appData", encodeData(curr_app_data));
+
+            render_verify_identity_1();
+            break;
+        case "verify_identity_2":
+            console.log("calling verify_identity_2");
+
+            const appData2 = decodeData(localStorage.getItem("appData"));
+            // Store the input value from the input element with class .input_field
+            const inputField = document.querySelector(".input_field");
+            if (inputField) {
+                val = inputField.value;
+                console.log(`email data is : ${val}`);
+                appData2.verify_identity_1_data = {input:val};
+                localStorage.setItem("appData", encodeData(appData2));
+            }
+
+            render_verify_identity_2();
+            break;
+        case "chat_listing":
+            console.log("calling chat_listing");
+
+            // Update registered_state to true
+            const appData3 = decodeData(localStorage.getItem("appData"));
+            
+            // Generate a unique username
+            const uniqueUsername = generateUniqueString();
+
+            // Store the input value from the input element with class .input_field
+            const inputField2 = document.querySelector(".input_field");
+            if (inputField2) {
+                let val = inputField2.value;
+                console.log("val for email otp code is :", val);
+                appData3.verify_identity_2_data = {input: val};
+                appData3.registered_state = true;
+
+                console.log(`\ndata found in localStorage is : ${appData3.verify_identity_1_data.input}`);
+                console.log(`data found in localStorage is : ${appData3.verify_identity_2_data.input}`);
+                console.log(`data found in localStorage is : ${appData3.registered_state}\n`);
+
+                // Using fetch API, we get appData attributes: verify_identity_1_data, verify_identity_2_data
+                // Hit endpoint /api/user where form data username, email, otp_secret
+                // Store the response in localStorage
+                fetch('http://localhost:5000/api/user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: uniqueUsername,
+                        email: appData3.verify_identity_1_data.input,
+                        otp_secret: appData3.verify_identity_2_data.input
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Successful user registration:', data);
+                    // Store the data in localStorage
+                    localStorage.setItem("register_data", encodeData(data));
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            }
+
+            localStorage.setItem("appData", encodeData(appData3));
+            render_chat_listing();
+            break;
+        case "contact_listing":
+            render_contact_listing();
+            break;
+        case "personal_profile":
+            render_personal_profile();
+            break;
+        default:
+            console.warn(`Unknown step: ${step}`);
+    }
+}
+
+// Function to encode data
+function encodeData(data) {
+    return JSON.stringify(data);
+}
+
+// Function to decode data
+function decodeData(data) {
+    return JSON.parse(data);
+}
+
+// Function to generate a unique 10-character string
+function generateUniqueString(length = 10) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+}
 
 // 🎨 Render Start Interface
 function render_start_interface() {
     console.log("calling render_start_interface");
 
-    if (registerd_state) {
+    const appData = decodeData(localStorage.getItem("appData"));
+    if (appData && appData.registered_state) {
         render_chat_listing();
         return;
     }
@@ -474,11 +652,9 @@ function render_start_interface() {
         install_btn.id = 'install_button';
         install_btn.innerHTML = `Install`;
         install_btn.classList.add("button_item");
-        // can we app margin of 10px below
         install_btn.style.marginTop = "10px";
 
         buttonContainer.appendChild(install_btn);
-        
 
         setupPWAInstallButton(install_btn);
     }
@@ -527,6 +703,8 @@ function render_verify_identity_2() {
     centerContainer.appendChild(create_middle_section(verify_identity_2_ui_structure.middle_section));
     centerContainer.appendChild(create_bottom_section(verify_identity_2_ui_structure.bottom_section));
 }
+
+
 
 function render_chat_listing() {
     console.log("calling render_chat_listing");
@@ -632,7 +810,6 @@ function render_contact_listing() {
     }
 }
 
-
 function render_personal_profile() {
     console.log("calling render_personal_profile");
 
@@ -683,6 +860,19 @@ function render_personal_profile() {
 
         setupPWAInstallButton(install_btn);
     }
+}
+
+
+function render_chat_interface(chat_type){
+    console.log('calling render_chat_interface');
+}
+
+function render_wallet_interface(){
+    console.log('calling render_wallet_interface');
+}
+
+function render_other_interface(){
+    console.log("calling render_other_interface");
 }
 
 
