@@ -42,67 +42,56 @@ class TestAPI(TestCase):
         else:
             logger.info(f"\nNo records found in table: {model.__tablename__}\n")
 
-    def test_create_2_users(self):
-        # Create two users by fetching name from the images [aku.jpeg, samurai.jpeg] in test_media folder
-        # generate username and email from the extracted name, then proceed to generate the otp
+
+    images = os.listdir('test_media')
+    logger.info(f"Images: {images}")
+
+    extraced_images = []
+
+    def get_2_unique_users(self):
+        # Create 2 users from images listing, where each user has a unique email, takes the associated image for profile_image_url
+        # For each user, the wall_image_url will be either background_one.jpeg or background_two.jpeg where we upload and get the respective url
 
         # fetching images in directory
         images = os.listdir('test_media')
         logger.info(f"\nImages found in directory: {images}\n")
         
-        # filter to find aku.jpeg and samurai.jpeg
-        aku_image = 'aku.jpeg' if 'aku.jpeg' in images else None
-        samurai_image = 'samurai.jpeg' if 'samurai.jpeg' in images else None
+        # filter to find two images for users
+        user_images = [image for image in images if image not in ['background_one.jpeg', 'background_two.jpeg']][:2]
 
-        # Check if the images exist
-        if not aku_image or not samurai_image:
-            logger.error("Required images not found in the directory")
-            self.fail("Required images not found in the directory")
+        if len(user_images) < 2:
+            logger.error("Not enough images to create 2 unique users")
+            self.fail("Not enough images to create 2 unique users")
         
-        # extract name
-        aku_name = aku_image.split('.')[0]
-        samurai_name = samurai_image.split('.')[0]
-        logger.info(f"Extracted names: {aku_name}, {samurai_name}")
+        users = []
+        for i, image in enumerate(user_images):
+            username = image.split('.')[0].lower()
+            email = f"{username}@gmail.com"
+            profile_image_url = f"test_media/{image}"
+            wall_image_url = f"test_media/background_{'one' if i % 2 == 0 else 'two'}.jpeg"
+            
+            otp = generate_otp(email)
+            otp_verified = verify_otp(email, otp)
+            
+            if otp_verified:
+                user_response = self.client.post('/api/user', json={
+                    'username': username,
+                    'email': email,
+                    'otp_secret': otp,
+                    'profile_image_url': profile_image_url,
+                    'wall_image_url': wall_image_url
+                })
+                self.assertEqual(user_response.status_code, 201)
+                users.append(user_response.get_json()['data'])
+            else:
+                logger.error(f"OTP verification failed for {email}")
+                self.fail(f"OTP verification failed for {email}")
         
-        # generate username and email
-        aku_username = aku_name.lower()
-        samurai_username = samurai_name.lower()
-        aku_email = f"{aku_name.replace(' ', '.').lower()}@gmail.com"
-        samurai_email = f"{samurai_name.replace(' ', '.').lower()}@gmail.com"
-        logger.info(f"Generated username and email: {aku_username}, {aku_email}, {samurai_username}, {samurai_email}")
-        
-        # generate otp
-        aku_otp = generate_otp(aku_email)
-        samurai_otp = generate_otp(samurai_email)
-        logger.info(f"Generated otp: {aku_otp}, {samurai_otp}")
-        
-        # verify otp
-        aku_verified = verify_otp(aku_email, aku_otp)
-        samurai_verified = verify_otp(samurai_email, samurai_otp)
-        logger.info(f"Verified otp: {aku_verified}, {samurai_verified}")
-        
-        # create users via API
-        aku_response = self.client.post('/api/user', json={
-            'username': aku_username,
-            'email': aku_email,
-            'otp': aku_otp
-        })
-        samurai_response = self.client.post('/api/user', json={
-            'username': samurai_username,
-            'email': samurai_email,
-            'otp': samurai_otp
-        })
-        
-        self.assertEqual(aku_response.status_code, 201)
-        self.assertEqual(samurai_response.status_code, 201)
-        
-        logger.info(f"Aku user creation response: {aku_response.get_json()}")
-        logger.info(f"Samurai user creation response: {samurai_response.get_json()}")
-        
-        self.log_table_records(User)
+        return users
 
-    def test_create_group_of_6_users(self):
-        pass 
-
+    def get_8_unique_users(self):
+        pass
+    
+    
 if __name__ == '__main__':
     unittest.main()

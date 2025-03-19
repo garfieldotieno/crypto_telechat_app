@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 import random, string
+from datetime import datetime 
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
@@ -23,7 +24,11 @@ class email_otps(db.Model):
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
 
 def fetch_all_email_otps():
     with app.app_context():
@@ -67,7 +72,11 @@ class User(db.Model):
     wallet_account = db.relationship('WalletAccount', backref='user', lazy=True)
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -77,7 +86,11 @@ class Group(db.Model):
     wallet_account = db.relationship('WalletAccount', backref='group', lazy=True)
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
 
 class GroupMembers(db.Model):
     __tablename__ = 'group_members'
@@ -85,7 +98,11 @@ class GroupMembers(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
 
 class Chat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -93,7 +110,11 @@ class Chat(db.Model):
     messages = db.relationship('ChatMessage', backref='chat', lazy=True)
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
 
 class ChatMembers(db.Model):
     __tablename__ = 'chat_members'
@@ -101,7 +122,11 @@ class ChatMembers(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -112,7 +137,11 @@ class ChatMessage(db.Model):
     timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
 
 class WalletAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -121,7 +150,11 @@ class WalletAccount(db.Model):
     balance = db.Column(db.Float, nullable=False, default=0.0)
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
 
 class WalletAccountTransaction(db.Model):
     transaction_type = db.Column(db.String(10), nullable=False)  # 'credit' or 'debit'
@@ -130,7 +163,11 @@ class WalletAccountTransaction(db.Model):
     timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
 
 # RESTful API Resources
 class CreateUser(Resource):
@@ -141,23 +178,38 @@ class CreateUser(Resource):
 
         username = data.get('username')
         email = data.get('email')
-        otp_secret = verify_otp(email, data.get('otp'))
-        wall_image_url = data.get('wall_image_url') or ""
-        profile_image_url = data.get('profile_image_url') or ""
-        
-        if not otp_secret:
-            return jsonify({"message": "Invalid OTP"}), 400
+        otp_secret = data.get('otp_secret') 
+        wall_image_url = data.get('wall_image_url', "")
+        profile_image_url = data.get('profile_image_url', "")
 
-        try:
-            user = User(username=username, email=email, otp_secret=otp_secret, wall_image_url=wall_image_url, profile_image_url=profile_image_url)
-            db.session.add(user)
-            db.session.commit()
-            return jsonify({"message": "User created", "data": user.to_dict()}), 201
+        print(f"checking fetched data from data : {username}, {email}, {otp_secret}, {wall_image_url}, {profile_image_url}")
         
-        except Exception as e:
-            db.session.rollback()
-            print(f"\nError creating user: {e}\n")
-            return jsonify({"message": "Error creating user"}), 500
+        otp_verified = verify_otp(email, otp_secret)
+        print(f"calling for otp verification : {otp_verified}")
+
+        if otp_verified:
+            try:
+                user = User(
+                    username=username, 
+                    email=email, 
+                    otp_secret=otp_secret, 
+                    wall_image_url=wall_image_url, 
+                    profile_image_url=profile_image_url
+                )
+                db.session.add(user)
+                db.session.commit()
+
+                return {
+                    "message": "User created", 
+                    "data": user.to_dict()
+                }, 201  # No jsonify()
+
+            except Exception as e:
+                db.session.rollback()
+                print(f"\nError creating user: {e}\n")
+                return {"message": "Error creating user"}, 500  # No jsonify()
+        else:
+            return {"message": "Invalid OTP"}, 400
 
 
 class CreateGroup(Resource):
@@ -222,7 +274,23 @@ class CreateGroupChat(Resource):
             print(f"\nError creating group chat: {e}\n")
             return jsonify({"message": "Error creating group chat"}), 500
 
-
+class AddGroupMember(Resource):
+    def post(self):
+        data = request.get_json()
+        group_id = data.get('group_id')
+        user_id = data.get('user_id')
+        
+        try:
+            group_member = GroupMembers(group_id=group_id, user_id=user_id)
+            db.session.add(group_member)
+            db.session.commit()
+            return jsonify({"message": "Group member added"})
+        
+        except Exception as e:
+            db.session.rollback()
+            print(f"\nError adding group member: {e}\n")
+            return jsonify({"message": "Error adding group member"}), 500
+        
 class CreateSingleChatMessage(Resource):
     def post(self):
         data = request.form
@@ -377,6 +445,7 @@ api.add_resource(CreateGroup, '/api/group')
 
 api.add_resource(CreateSingleChat, '/api/chat/single')
 api.add_resource(CreateGroupChat, '/api/chat/group')
+api.add_resource(AddGroupMember, '/api/group/member')
 
 api.add_resource(CreateSingleChatMessage, '/api/chat/single/message')
 api.add_resource(CreateGroupChatMessage, '/api/chat/group/message')
