@@ -96,10 +96,10 @@ let verify_identity_2_ui_structure = {
 
 
 let chat_listing_ui_structure = {
-    top_section: [  
+    top_section: [
         { visible: false, component_type: "icon_label", icon: "fa-regular fa-arrow-left", label: "Edit", position: "left" },
         { visible: true, component_type: "text", label: "Chats", position: "center" },
-        { visible: true, component_type: "icon_label", icon: "fa-regular fa-pen-to-square", label: "add", position: "right" }
+        { visible: true, component_type: "icon_label", icon: "fa-regular fa-pen-to-square", label: "Add", position: "right" }
     ],
 
     middle_section: [
@@ -107,28 +107,8 @@ let chat_listing_ui_structure = {
             visible: true,
             component_type: "list_pad",
             item_list: [
-                { item_type: "list_item_search", placeholder: "search for members or users" },
-                { item_type: "list_item_wallet", label: "Wallet", balance: "$100.00", notification_badge: "3" },
-                { item_type: "list_item_chat", label: "Chat 1", last_message: "Hello, how are you?", notification_badge: "1" },
-                { item_type: "list_item_chat", label: "Chat 2", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 3", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 4", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 5", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 6", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 7", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 8", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 9", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 10", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 11", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 12", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 13", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 14", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 15", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 16", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 17", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 18", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 19", last_message: "Let's meet tomorrow.", notification_badge: "2" },
-                { item_type: "list_item_chat", label: "Chat 20", last_message: "Let's meet tomorrow.", notification_badge: "2" },
+                { item_type: "list_item_search", placeholder: "Search for chats" },
+                ...get_my_chats(), // Function is called here to dynamically fetch chat data
                 { item_type: "navbar", item_list: [
                     { item_type: "navbar_item", icon: "fa-solid fa-comments", label: "Chats" },
                     { item_type: "navbar_item", icon: "fa-solid fa-user", label: "Profile" },
@@ -140,6 +120,103 @@ let chat_listing_ui_structure = {
 
     bottom_section: []
 };
+
+
+
+
+
+
+function get_my_chats() {
+    console.log("calling get_my_chats");
+
+    let registerData = localStorage.getItem('register_data');
+
+    if (!registerData) {
+        console.warn("No register_data found in localStorage.");
+        return [];
+    }
+
+    try {
+        let parsedData = JSON.parse(registerData);
+        let user_id = parsedData.data.id;
+
+        if (!user_id) {
+            console.warn("User ID not found in register_data.");
+            return [];
+        }
+
+        // Fetch chats from API (Synchronous fetch to be used directly in structure)
+        let request = new XMLHttpRequest();
+        request.open("GET", `/api/user/${user_id}/chats`, false); // Synchronous request
+        request.send(null);
+
+        if (request.status !== 200) {
+            console.error("Failed to fetch chats:", request.statusText);
+            return [];
+        }
+
+        let chats = JSON.parse(request.responseText);
+
+        // Map API response to UI structure format
+        return chats.map(chat => ({
+            item_type: "list_item_chat",
+            label: chat.chat_type === "single" ? `Chat ${chat.id}` : `Group ${chat.id}`,
+            last_message: "Tap to open chat", // Placeholder text
+            notification_badge: "" // No unread count in API response
+        }));
+
+    } catch (error) {
+        console.error("Error fetching chats:", error);
+        return [];
+    }
+}
+
+
+
+
+
+function get_my_contacts() {
+    console.log("Fetching contacts...");
+
+    let registerData = localStorage.getItem("register_data");
+    if (!registerData) {
+        console.warn("No register_data found in localStorage.");
+        return [];
+    }
+
+    try {
+        let parsedData = JSON.parse(registerData);
+        let user_id = parsedData.data.id;
+
+        if (!user_id) {
+            console.warn("User ID not found in register_data.");
+            return [];
+        }
+
+        // Synchronous request to fetch contacts
+        let request = new XMLHttpRequest();
+        request.open("GET", `/api/user/${user_id}/contacts`, false); // Sync request
+        request.send(null);
+
+        if (request.status !== 200) {
+            console.error("Failed to fetch contacts:", request.statusText);
+            return [];
+        }
+
+        let contacts = JSON.parse(request.responseText);
+
+        // Map API response to UI structure format
+        return contacts.map(contact => ({
+            item_type: "list_item_contact",
+            label: contact.contact_name,
+            status: "online" // Default status
+        }));
+
+    } catch (error) {
+        console.error("Error fetching contacts:", error);
+        return [];
+    }
+}
 
 let contact_listing_ui_structure = {
     top_section: [  
@@ -154,8 +231,7 @@ let contact_listing_ui_structure = {
             component_type: "list_pad",
             item_list: [
                 { item_type: "list_item_search", placeholder: "search for members or users" },
-                { item_type: "list_item_contact", label: "Contact 1", status: "online" },
-                { item_type: "list_item_contact", label: "Contact 2", status: "last seen recently" },
+                ...get_my_contacts(), // ✅ Function is called inside `item_list`
                 { item_type: "navbar", item_list: [
                     { item_type: "navbar_item", icon: "fa-solid fa-comments", label: "Chats" },
                     { item_type: "navbar_item", icon: "fa-solid fa-user", label: "Profile" },
@@ -167,6 +243,9 @@ let contact_listing_ui_structure = {
 
     bottom_section: []
 };
+
+
+
 
 
 let personal_profile_ui_structure = {
