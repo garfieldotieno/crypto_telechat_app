@@ -68,7 +68,6 @@ function get_country(){
 }
 
 
-
 let verify_identity_2_ui_structure = {
     top_section: [
         { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "step_navigation('verify_identity_1')" },
@@ -156,6 +155,7 @@ function get_my_chats() {
         }
 
         let chats = JSON.parse(request.responseText);
+        console.log("Fetched chats:", chats); // Log the fetched chats
 
         // Map API response to UI structure format
         return chats.map(chat => ({
@@ -204,6 +204,7 @@ function get_my_contacts() {
         }
 
         let contacts = JSON.parse(request.responseText);
+        console.log("Fetched contacts:", contacts); // Log the fetched contacts
 
         // Map API response to UI structure format
         return contacts.map(contact => ({
