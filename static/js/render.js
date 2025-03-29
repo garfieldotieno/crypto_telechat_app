@@ -1,108 +1,311 @@
-// 🎨 Render Start Interface
+console.log('now loading render.js');
+
 function render_start_interface() {
     console.log("calling render_start_interface");
-
-    const appData = decodeData(localStorage.getItem("appData"));
-    if (appData && appData.registered_state) {
-        render_chat_listing();
-        return;
-    }
-
-    document.body.innerHTML = "";
-
+    
+    document.body.innerHTML = ""; // Clear previous content
+    document.body.classList.add('start-screen'); // Add special class for start screen
+    
     let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
     let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
-
+    
+    // Create main container with full height for start screen
     let container = document.createElement("div");
     container.classList.add(containerClass);
     document.body.appendChild(container);
-
+    
     let centerContainer = document.createElement("div");
     centerContainer.classList.add(centerContainerClass);
     container.appendChild(centerContainer);
-
-    // Conditionally render the top section based on the visible property
-    if (start_ui_structure.top_section.some(item => item.visible)) {
-        centerContainer.appendChild(create_top_section(start_ui_structure.top_section));
+    
+    // Parse UI structure from your config
+    let uiStructure = start_interface_ui_config.find(config => config.config_name === "start");
+    
+    // Build sections only if they exist in the structure
+    if (uiStructure.top_section && uiStructure.top_section.some(item => item.visible)) {
+        centerContainer.appendChild(create_top_section(uiStructure.top_section));
     }
-
-    // Create middle section
-    let middleSection = create_middle_section(start_ui_structure.middle_section);
-    centerContainer.appendChild(middleSection);
-    centerContainer.appendChild(create_bottom_section(start_ui_structure.bottom_section));
-
-    // Check if the app is already installed
-    window.addEventListener('appinstalled', (event) => {
-        console.log('PWA was installed');
-        // Remove the install button if the app is already installed
-        let installButton = document.getElementById('install_button');
-        if (installButton) {
-            installButton.remove();
+    
+    // Middle section with background image
+    if (uiStructure.middle_section) {
+        let middleSection = create_middle_section(uiStructure.middle_section);
+        centerContainer.appendChild(middleSection);
+    }
+    
+    // Bottom section with buttons
+    if (uiStructure.bottom_section) {
+        centerContainer.appendChild(create_bottom_section(uiStructure.bottom_section));
+    }
+    
+    // Add PWA install button if applicable
+    if (!window.matchMedia('(display-mode: standalone)').matches && 
+        !window.navigator.standalone) {
+        
+        let buttonContainer = document.querySelector(".button_stack");
+        if (!buttonContainer) {
+            buttonContainer = document.createElement("div");
+            buttonContainer.classList.add("button_stack");
+            centerContainer.appendChild(buttonContainer);
         }
-    });
-
-    // Create and insert the install button if the app is not installed
-    if (!window.matchMedia('(display-mode: standalone)').matches) {
-        console.log("now adding the download button");
-        let buttonContainer = document.getElementsByClassName("button_stack")[0]; // Get first matching element
-
-        let install_btn = document.createElement("button");
-        install_btn.id = 'install_button';
-        install_btn.innerHTML = `Install`;
-        install_btn.classList.add("button_item");
-        install_btn.style.marginTop = "10px";
-
-        buttonContainer.appendChild(install_btn);
-
-        setupPWAInstallButton(install_btn);
+        
+        let installBtn = document.createElement("button");
+        installBtn.id = 'install_button';
+        installBtn.innerHTML = `Install App`;
+        installBtn.classList.add("button_item");
+        installBtn.style.marginTop = "10px";
+        
+        buttonContainer.appendChild(installBtn);
+        setupPWAInstallButton(installBtn);
     }
 }
 
+// Follow the same pattern for other render_* functions
+// render_chat_listing, render_contact_listing, render_personal_profile, etc.
+
 function render_verify_identity_1() {
     console.log("calling render_verify_identity_1");
-
+    
     document.body.innerHTML = ""; // Clear previous content
-
+    document.body.classList.remove('start-screen'); // Remove start screen class if present
+    document.body.classList.add('verify-screen'); // Add verification screen class
+    
     let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
     let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
-
+    
     let container = document.createElement("div");
     container.classList.add(containerClass);
     document.body.appendChild(container);
-
+    
     let centerContainer = document.createElement("div");
     centerContainer.classList.add(centerContainerClass);
     container.appendChild(centerContainer);
-
-    // Build the UI sections dynamically
-    centerContainer.appendChild(create_top_section(verify_identity_1_ui_structure.top_section));
-    centerContainer.appendChild(create_middle_section(verify_identity_1_ui_structure.middle_section));
-    centerContainer.appendChild(create_bottom_section(verify_identity_1_ui_structure.bottom_section));
+    
+    // Get UI structure for verify_identity_1 from start_interface_ui_config
+    let uiStructure = start_interface_ui_config.find(config => config.config_name === "verify_identity_1");
+    
+    if (!uiStructure) {
+        console.error("Could not find UI configuration for verify_identity_1");
+        return;
+    }
+    
+    // Build sections only if they exist in the structure
+    if (uiStructure.top_section && uiStructure.top_section.some(item => item.visible)) {
+        centerContainer.appendChild(create_top_section(uiStructure.top_section));
+    }
+    
+    // Middle section with input field
+    if (uiStructure.middle_section) {
+        let middleSection = create_middle_section(uiStructure.middle_section);
+        centerContainer.appendChild(middleSection);
+    }
+    
+    // Bottom section with buttons
+    if (uiStructure.bottom_section) {
+        centerContainer.appendChild(create_bottom_section(uiStructure.bottom_section));
+    }
+    
+    // Set focus on the email input field for better UX
+    setTimeout(() => {
+        const emailInput = document.getElementById('email');
+        if (emailInput) {
+            emailInput.focus();
+        }
+    }, 100);
+    
+    // Call the transition function if specified
+    if (uiStructure.transition_function && uiStructure.transition_function.name) {
+        const transitionFn = window[uiStructure.transition_function.name];
+        if (typeof transitionFn === 'function') {
+            if (uiStructure.transition_function.type === "input") {
+                // For input transitions, we'll handle in the form submission
+                console.log("Input transition function ready:", uiStructure.transition_function.name);
+            } else {
+                transitionFn();
+            }
+        }
+    }
 }
 
 function render_verify_identity_2() {
     console.log("calling render_verify_identity_2");
-
+    
     document.body.innerHTML = ""; // Clear previous content
-
+    document.body.classList.remove('start-screen'); // Remove start screen class if present
+    document.body.classList.add('verify-screen'); // Add verification screen class
+    
     let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
     let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
-
+    
     let container = document.createElement("div");
     container.classList.add(containerClass);
     document.body.appendChild(container);
-
+    
     let centerContainer = document.createElement("div");
     centerContainer.classList.add(centerContainerClass);
     container.appendChild(centerContainer);
-
-    // Build the UI sections dynamically
-    centerContainer.appendChild(create_top_section(verify_identity_2_ui_structure.top_section));
-    centerContainer.appendChild(create_middle_section(verify_identity_2_ui_structure.middle_section));
-    centerContainer.appendChild(create_bottom_section(verify_identity_2_ui_structure.bottom_section));
+    
+    // Get UI structure for verify_identity_2 from start_interface_ui_config
+    let uiStructure = start_interface_ui_config.find(config => config.config_name === "verify_identity_2");
+    
+    if (!uiStructure) {
+        console.error("Could not find UI configuration for verify_identity_2");
+        return;
+    }
+    
+    // Build sections only if they exist in the structure
+    if (uiStructure.top_section && uiStructure.top_section.some(item => item.visible)) {
+        centerContainer.appendChild(create_top_section(uiStructure.top_section));
+    }
+    
+    // Middle section with input field
+    if (uiStructure.middle_section) {
+        let middleSection = create_middle_section(uiStructure.middle_section);
+        centerContainer.appendChild(middleSection);
+        
+        // Add email reminder if available
+        const storedEmail = localStorage.getItem("email");
+        if (storedEmail) {
+            const emailReminder = document.createElement('div');
+            emailReminder.classList.add('email-reminder');
+            emailReminder.innerHTML = `<p>A code has been sent to <strong>${storedEmail}</strong></p>`;
+            emailReminder.style.textAlign = 'center';
+            emailReminder.style.marginTop = '10px';
+            emailReminder.style.color = '#666';
+            middleSection.appendChild(emailReminder);
+        }
+    }
+    
+    // Bottom section with buttons
+    if (uiStructure.bottom_section) {
+        centerContainer.appendChild(create_bottom_section(uiStructure.bottom_section));
+    }
+    
+    // Add resend code option
+    const resendContainer = document.createElement('div');
+    resendContainer.classList.add('resend-container');
+    resendContainer.style.textAlign = 'center';
+    resendContainer.style.marginTop = '20px';
+    
+    const resendButton = document.createElement('button');
+    resendButton.textContent = 'Resend Code';
+    resendButton.classList.add('text-button');
+    resendButton.style.background = 'none';
+    resendButton.style.border = 'none';
+    resendButton.style.color = '#007AFF';
+    resendButton.style.fontWeight = 'bold';
+    resendButton.style.cursor = 'pointer';
+    
+    resendButton.addEventListener('click', () => {
+        resendButton.textContent = 'Code resent';
+        resendButton.style.color = '#666';
+        resendButton.disabled = true;
+        
+        // Add your code resending logic here
+        console.log('Resending verification code');
+        
+        // Simulate resending delay with countdown
+        let countdown = 30;
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            resendButton.textContent = `Resend in ${countdown}s`;
+            
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                resendButton.textContent = 'Resend Code';
+                resendButton.style.color = '#007AFF';
+                resendButton.disabled = false;
+            }
+        }, 1000);
+    });
+    
+    resendContainer.appendChild(resendButton);
+    centerContainer.appendChild(resendContainer);
+    
+    // Set focus on the OTP input field for better UX
+    setTimeout(() => {
+        const otpInput = document.getElementById('otp_code');
+        if (otpInput) {
+            otpInput.focus();
+        }
+    }, 100);
+    
+    // Call the transition function if specified
+    if (uiStructure.transition_function && uiStructure.transition_function.name) {
+        const transitionFn = window[uiStructure.transition_function.name];
+        if (typeof transitionFn === 'function') {
+            if (uiStructure.transition_function.type === "input") {
+                // For input transitions, we'll handle in the form submission
+                console.log("Input transition function ready:", uiStructure.transition_function.name);
+            } else {
+                transitionFn();
+            }
+        }
+    }
 }
 
+// Add helper functions for the identity verification process
+function saveEmailToLocalStorage(email) {
+    if (email) {
+        localStorage.setItem("email", email);
+        console.log("Email saved to localStorage:", email);
+    }
+}
 
+function processVerificationCode(code) {
+    if (code) {
+        console.log("Processing verification code:", code);
+        // Add your verification code processing logic here
+        
+        // For demo purposes, let's just accept any 6-digit code
+        if (code.length === 6 && /^\d+$/.test(code)) {
+            console.log("Valid verification code format");
+            return true;
+        } else {
+            console.warn("Invalid verification code format");
+            return false;
+        }
+    }
+    return false;
+}
+
+// Add this function to create a PWA install button in both verification screens
+function addPWAInstallButtonToScreen(container) {
+    // Check if the app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches || 
+        window.navigator.standalone === true) {
+        console.log("App already installed - not adding button");
+        return null;
+    }
+    
+    // Check if setupPWAInstallButton function exists
+    if (typeof setupPWAInstallButton !== 'function') {
+        console.warn("PWA install function not available");
+        return null;
+    }
+
+    console.log("Adding PWA install button");
+    let buttonContainer = document.createElement("div");
+    buttonContainer.classList.add("pwa-install-container");
+    buttonContainer.style.textAlign = "center";
+    buttonContainer.style.marginTop = "20px";
+    buttonContainer.style.opacity = "0.8";
+    container.appendChild(buttonContainer);
+
+    let installBtn = document.createElement("button");
+    installBtn.id = 'install_button';
+    installBtn.innerHTML = `Install App`;
+    installBtn.style.padding = "8px 15px";
+    installBtn.style.backgroundColor = "#f0f0f0";
+    installBtn.style.color = "#333";
+    installBtn.style.border = "1px solid #ccc";
+    installBtn.style.borderRadius = "5px";
+    installBtn.style.display = "none"; // Hidden by default until prompt is available
+    
+    buttonContainer.appendChild(installBtn);
+    setupPWAInstallButton(installBtn);
+    
+    return installBtn;
+}
 
 function render_chat_listing() {
     console.log("calling render_chat_listing");
@@ -353,8 +556,6 @@ function render_create_contact_interface() {
     centerContainer.appendChild(create_bottom_section(create_contact_ui_structure.bottom_section));
 }
 
-
-
 function verify_contact() {
     console.log("calling verify_contact");
 
@@ -375,7 +576,6 @@ function verify_contact() {
         console.warn("Email or phone number is missing");
     }
 }
-
 
 function add_contact(name, email, phone) {
     console.log("calling add_contact");
@@ -473,7 +673,6 @@ function render_failed_interface() {
     console.log("calling render_failed_interface");
     // Add logic to render failed interface
 }
-
 
 
 function render_contact_listing() {

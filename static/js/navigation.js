@@ -1,3 +1,5 @@
+console.log('now loading navigation.js');
+
 
 function step_navigation(step) {
     console.log(`calling step_navigation, for step : ${step}`);
@@ -360,7 +362,6 @@ function create_middle_section(items) {
 }
 
 
-
 // 🛠️ Function to Create Bottom Section
 function create_bottom_section(items) {
     let section = document.createElement("div");
@@ -425,12 +426,17 @@ function create_bottom_section(items) {
 }
 
 
-function load_input_step(){
+function load_navigation_step(){
     console.log('calling load_input_step');
 
     let step_input_data = {
         
     }
+}
+
+function update_navigation_step(){
+    console.log('calling update_input_step');
+    
 }
 
 function render_start_for(interface_name){

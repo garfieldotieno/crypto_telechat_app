@@ -685,6 +685,11 @@ api.add_resource(AddChatMember, '/api/chat/member')
 api.add_resource(CreateSingleChatMessage, '/api/chat/single/message')
 api.add_resource(CreateGroupChatMessage, '/api/chat/group/message')
 
+
+@app.route('/app.html')
+def render_app():
+    return render_template('app.html')
+
 @app.route('/api/user/<int:user_id>/chats', methods=['GET'])
 def list_user_chats(user_id):
     chats = Chat.query.filter_by(creator_id=user_id).all()

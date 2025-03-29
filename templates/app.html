@@ -5,29 +5,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tele-Crypto</title>
 
-    <!-- 🟢 PWA META TAGS -->
+    <!-- 🟢 ENHANCED PWA META TAGS -->
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#007AFF">
     
+    <!-- Standard PWA capable tag -->
+    <meta name="mobile-web-app-capable" content="yes">
     
+    <!-- Apple-specific PWA capable tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <!-- Apple touch icons -->
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/icons/icon-192x192.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='images/icons/icon-152x152.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/icons/icon-180x180.png') }}">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/icons/favicon.ico') }}">
+
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="static/css/app.css">
+    <link rel="stylesheet" href="static/fontawesome-free-6.7.2-web/css/all.css">
+
+    <!-- JavaScript -->
     <script src="static/js/app.js"></script>
-    <script src="static/js/ui-structure.js"></script>
+    <script src="static/js/ui2-structure.js"></script>
     <script src="static/js/navigation.js"></script>
     <script src="static/js/render.js"></script>
-
-    <link rel="stylesheet" href="static/fontawesome-free-6.7.2-web/css/all.css">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 
     <!-- 🟢 SERVICE WORKER REGISTRATION -->
     <script>
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
-            .then(() => console.log("Service Worker Registered"));
+            .then(() => console.log("Service Worker Registered"))
+            .catch(err => console.error("Service Worker Registration Failed:", err));
         }
+    </script>
+
+    <!-- Prevent mobile browser interface from affecting app height -->
+    <script>
+        // Fix viewport height on mobile browsers (iOS Safari mainly)
+        function setViewHeight() {
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        
+        window.addEventListener('resize', setViewHeight);
+        window.addEventListener('orientationchange', setViewHeight);
+        document.addEventListener('DOMContentLoaded', setViewHeight);
     </script>
     
 </head>
+
 <body class="body">
+    <!-- iOS Installation Prompt -->
+    <div id="ios-prompt" style="display: none; position: fixed; bottom: 0; width: 100%; background-color: #f8f8f8; padding: 15px; border-top: 1px solid #ddd; text-align: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000;">
+        <p>Install this app on your iPhone: tap <i class="fas fa-share-square"></i> and then "Add to Home Screen"</p>
+        <button id="close-ios-prompt" style="background-color: #007AFF; color: white; border: none; padding: 8px 15px; border-radius: 5px; margin-top: 10px;">Got it</button>
+    </div>
+
+    <script>
+        // Show iOS installation prompt only on iOS devices in Safari
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isStandalone = window.navigator.standalone;
+            const isiOSPrompt = document.getElementById('ios-prompt');
+            
+            if (isIOS && !isStandalone && isiOSPrompt) {
+                // Don't show immediately, give user time to see the app first
+                setTimeout(() => {
+                    // Only show if user hasn't already dismissed it
+                    if (localStorage.getItem('iosPromptClosed') !== 'true') {
+                        isiOSPrompt.style.display = 'block';
+                    }
+                }, 3000);
+                
+                document.getElementById('close-ios-prompt').addEventListener('click', function() {
+                    isiOSPrompt.style.display = 'none';
+                    // Save to localStorage to avoid showing again
+                    localStorage.setItem('iosPromptClosed', 'true');
+                });
+            }
+        });
+    </script>
 </body>
 </html>

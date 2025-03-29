@@ -40,6 +40,7 @@ let verify_identity_1_ui_structure = {
 };
 
 
+
 let verify_identity_2_ui_structure = {
     top_section: [
         { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "step_navigation('verify_identity_1')" },

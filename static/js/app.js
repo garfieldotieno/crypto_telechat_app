@@ -1,3 +1,29 @@
+console.log('now loading app.js')
+
+
+// At the beginning of your file
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("App Loaded");
+    set_display();
+    window.addEventListener("resize", set_display);
+    
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(error => {
+                console.log('ServiceWorker registration failed: ', error);
+            });
+    }
+});
+
+// ... rest of your existing code
+
+
+
+
 function set_display() {
     console.log("calling set_display");
 
