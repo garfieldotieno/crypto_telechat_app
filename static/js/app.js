@@ -214,6 +214,14 @@ function init_test_user(){
         "profile_image_url": "test_media/otieno.jpeg"
     }
 
+    let app_data = decodeData(localStorage.getItem('appData'));
+
+    console.log("app_data", app_data);
+
+    app_data.registered_state = false;
+
+    localStorage.setItem('appData', encodeData(app_data));
+
     localStorage.setItem('register_data',encodeData({"data":user_map}))
 }
 

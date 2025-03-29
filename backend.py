@@ -667,6 +667,11 @@ class SignGroupWithdrawalRequest(Resource):
 
         return {"message": "Withdrawal request signed"}
 
+
+class ExportTransactions(Resource):
+    pass 
+
+
 # Register API resources
 api.add_resource(CreateUser, '/api/user')
 api.add_resource(CreateGroup, '/api/group')

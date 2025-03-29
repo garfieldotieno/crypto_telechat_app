@@ -152,3 +152,43 @@ function showIOSInstallInstructions(container) {
         instructionsBox.remove();
     });
 }
+
+
+// Add this function to create a PWA install button in both verification screens
+function addPWAInstallButtonToScreen(container) {
+    // Check if the app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches || 
+        window.navigator.standalone === true) {
+        console.log("App already installed - not adding button");
+        return null;
+    }
+    
+    // Check if setupPWAInstallButton function exists
+    if (typeof setupPWAInstallButton !== 'function') {
+        console.warn("PWA install function not available");
+        return null;
+    }
+
+    console.log("Adding PWA install button");
+    let buttonContainer = document.createElement("div");
+    buttonContainer.classList.add("pwa-install-container");
+    buttonContainer.style.textAlign = "center";
+    buttonContainer.style.marginTop = "20px";
+    buttonContainer.style.opacity = "0.8";
+    container.appendChild(buttonContainer);
+
+    let installBtn = document.createElement("button");
+    installBtn.id = 'install_button';
+    installBtn.innerHTML = `Install App`;
+    installBtn.style.padding = "8px 15px";
+    installBtn.style.backgroundColor = "#f0f0f0";
+    installBtn.style.color = "#333";
+    installBtn.style.border = "1px solid #ccc";
+    installBtn.style.borderRadius = "5px";
+    installBtn.style.display = "none"; // Hidden by default until prompt is available
+    
+    buttonContainer.appendChild(installBtn);
+    setupPWAInstallButton(installBtn);
+    
+    return installBtn;
+}
