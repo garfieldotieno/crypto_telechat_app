@@ -277,14 +277,15 @@ class CreateContact(Resource):
         contact_digits = data.get('contact_digits')
         contact_name = data.get('contact_name')
         contact_email = data.get('contact_email')
+        app_user = data.get('app_user')
+        app_user_id = data.get('app_user_id')
 
         # Verify if the user is already an app user
-        app_user = False
-        app_user_id = None
-        existing_user = User.query.filter_by(email=contact_email).first()
-        if existing_user:
-            app_user = True
-            app_user_id = existing_user.id
+        
+        # existing_user = User.query.filter_by(email=contact_email).first()
+        # if existing_user:
+        #     app_user = True
+        #     app_user_id = existing_user.id
 
         print(f"checking fetched data from data : {adding_user_id}, {contact_digits}, {contact_name}, {contact_email}, {app_user}, {app_user_id}")
         
@@ -727,6 +728,10 @@ def list_user_contacts(user_id):
 @app.route('/')
 def index():
     return render_template('app.html')
+
+@app.route('/design')
+def render_design():
+    return render_template('grid_design.html')
 
 # 🟢 Serve Manifest
 @app.route("/manifest.json")

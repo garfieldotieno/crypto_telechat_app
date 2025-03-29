@@ -1,33 +1,168 @@
 import requests
+from backend import generate_otp, verify_otp
 
 BASE_URL = "http://localhost:5000/api"
 
 # Create Users
 users_payload = [
-    # {
-    #     "username": "otieno",
-    #     "email": "otienot75@gmail.com",
-    #     "otp_secret": "229578",
-    #     "wall_image_url": "test_media/background_one.jpeg",
-    #     "profile_image_url": "test_media/otieno.jpeg"
-    # },
+    {
+        "username": "otieno",
+        "email": "otienot75@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/otieno.jpeg"
+    },
     {
         "username": "garfield",
         "email": "garfield@gmail.com",
-        "otp_secret": "326178",
+        "otp_secret": "",
         "wall_image_url": "test_media/background_two.jpeg",
         "profile_image_url": "test_media/garfield.jpeg"
     },
     {
         "username": "stark",
         "email": "stark@gmail.com",
-        "otp_secret": "650889",
+        "otp_secret": "",
         "wall_image_url": "test_media/background_one.jpeg",
         "profile_image_url": "test_media/stark.jpeg"
-    }
+    },
+    {
+        "username": "stark4",
+        "email": "stark4@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark5",
+        "email": "stark5@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark6",
+        "email": "stark6@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark7",
+        "email": "stark7@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark8",
+        "email": "stark8@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark9",
+        "email": "stark9@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark10",
+        "email": "stark10@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark11",
+        "email": "stark11@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark12",
+        "email": "stark12@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark13",
+        "email": "stark13@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark14",
+        "email": "stark14@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark15",
+        "email": "stark15@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark16",
+        "email": "stark16@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark17",
+        "email": "stark17@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark18",
+        "email": "stark18@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark19",
+        "email": "stark19@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    {
+        "username": "stark20",
+        "email": "stark20@gmail.com",
+        "otp_secret": "",
+        "wall_image_url": "test_media/background_one.jpeg",
+        "profile_image_url": "test_media/stark.jpeg"
+    },
+    
 ]
 
+transform_payload = []
+print(f"current transform_upload before otp update is : {transform_payload}")
+
 for user in users_payload:
+    # generate otp
+    otp = generate_otp(user['email'])
+    # update otp_secret
+    user['otp_secret'] = otp
+
+    transform_payload.append(user)
+
+print(f"current transform_upload after otp update is : {transform_payload}")
+     
+
+for user in transform_payload:
     response = requests.post(f"{BASE_URL}/user", json=user)
     print(response.json())
 
@@ -49,7 +184,64 @@ single_chats_payload = [
     {
         "creator_id": 1,
         "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
+    },
+    {
+        "creator_id": 1,
+        "chat_type": "single"
     }
+
 ]
 
 for chat in single_chats_payload:
