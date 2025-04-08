@@ -257,7 +257,7 @@ class CreateUser(Resource):
                 return {
                     "message": "User created", 
                     "data": user.to_dict()
-                }, 201  # No jsonify()
+                }, 201  
 
             except Exception as e:
                 db.session.rollback()
@@ -271,7 +271,7 @@ class CreateContact(Resource):
     def post(self):
         data = request.get_json()
 
-        print(f"\ncalling create contact, with data : {data}")
+        print(f"\ncalling create contact, with data : {data} of type : {type(data)}")
 
         adding_user_id = data.get('adding_user_id')
         contact_digits = data.get('contact_digits')
@@ -739,9 +739,7 @@ def list_user_contacts(user_id):
 def index():
     return render_template('app.html')
 
-@app.route('/design')
-def render_design():
-    return render_template('grid_design.html')
+
 
 # 🟢 Serve Manifest
 @app.route("/manifest.json")

@@ -1,227 +1,207 @@
 console.log('now loading ui2-structure.js');
 
-start_interface_ui_config = [
-    {
-        config_name: "start",
-        top_section: [
+const ui_structure = {
+    top_section: {
+        start_page: [
             { visible: false, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "back", position: "left" },
             { visible: true, component_type: "text", label: "Welcome", position: "center" },
             { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "add", position: "right" }
         ],
-        middle_section: [
+        wallet_start_page: [
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
+            { visible: true, component_type: "text", label: "Wallet", position: "center" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-info-circle", label: "Info", position: "right" }
+        ],
+        wallet_about_page: [
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
+            { visible: true, component_type: "text", label: "About Wallet", position: "center" },
+            { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
+        ],
+        personal_profile_page: [
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_contact_listing('normal')"},
+            { visible: true, component_type: "text", label: "Profile", position: "center" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-edit", label: "Edit", position: "right" }
+        ],
+        other_profile_page: [
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
+            { visible: true, component_type: "text", label: "Contact", position: "center" },
+            { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
+        ],
+        group_profile_page: [
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
+            { visible: true, component_type: "text", label: "Group Profile", position: "center" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-users", label: "Members", position: "right" }
+        ],
+        contact_page: [
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left", action:"render_contact_listing('select_many')" },
+            { visible: true, component_type: "text", label: "Contacts", position: "center" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-user-plus", label: "Add Contact", position: "right", action: "render_dynamic_input_interface('create_contact')" },
+            { visible: true, component_type: 'item_search', placeholder: "Search"}
+        ],
+        chat_page: [
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left" },
+            { visible: true, component_type: "text", label: "Chat", position: "center" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-ellipsis-v", label: "Options", position: "right" }
+        ],
+        create_page: [
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_start()" },
+            { visible: true, component_type: "text", label: "Create", position: "center" },
+            { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
+        ],
+        select_contact_page:[
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_contact_listing('normal')"},
+            { visible: true, component_type: "text", label: "Select Contact", position: "center" },
+            { visible: false, component_type: "icon_label", icon: "fa-solid fa-edit", label: "Edit", position: "right" },
+            { visible: true, component_type: 'item_search', placeholder: "Search"}
+        ],
+        chat_message_page: [
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
+            { visible: true, component_type: "text", label: "Messages", position: "center" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-info-circle", label: "Info", position: "right" }
+        ]
+    },
+    
+    middle_section: {
+        start_page: [
             { visible: true, component_type: "background_image", img_src: "static/images/SplashScreen.png" }
         ],
-        bottom_section: [
+        wallet_start_page: [
+            { visible: true, component_type: "profile_image", img_src: "static/images/samurai.png" },
+            { visible: true, component_type: "profile_background_image", img_src: "static/images/background_one.jpeg" },
+            { visible: true, component_type: "separation_title", label: "Information" },
+            { visible: true, component_type: "balance_section", balance: "1000 USD" },
+            { visible: true, component_type: "personal_transaction_listing", transactions: [] },
+            { visible: true, component_type: "group_transaction_listing", transactions: [] }
+        ],
+        wallet_about_page: [
+            { visible: true, component_type: "separation_title", label: "About" },
+            { visible: true, component_type: "info_section", content: "This wallet allows you to manage your transactions securely within the chat app." }
+        ],
+        personal_profile_page: [
+            { visible: true, component_type: "profile_image", img_src: "static/images/background_one.jpeg" },
+            { visible: true, component_type: "profile_background_image", img_src: "static/images/samurai.jpeg" },
+            { visible: true, component_type: "separation_title", label: "Information" },
+            { visible: true, component_type: "info_section", action: "show_profile_information()" },
+            { visible: true, component_type: "label_item", label: "Username", action: "copy_username()" },
+            { visible: true, component_type: "label_item", label: "Email", action: "copy_email()" },
+            { visible: true, component_type: "label_item", label: "Wallet", action: "copy_wallet()" }
+        ],
+        other_profile_page: [
+            { visible: true, component_type: "profile_image", img_src: "static/images/background_two.jpeg" },
+            { visible: true, component_type: "profile_background_image", img_src: "static/images/aku.jpeg" },
+            { visible: true, component_type: "separation_title", label: "Information" },
+            { visible: true, component_type: "info_section", action: "show_profile_information()" },
+            { visible: true, component_type: "label_item", label: "Username", action: "copy_username()" },
+            { visible: true, component_type: "label_item", label: "Email", action: "copy_email()" },
+            { visible: true, component_type: "label_item", label: "Wallet", action: "copy_wallet()" },
+            { visible: true, component_type: "separation_title", label: "Groups" },
+            { visible: true, component_type: "resource_listing_interface", resource_type: "chats:groups", action: "list_common_groups()" }
+        ],
+        contact_page : [
+            {
+                visible: true,
+                component_type: "list_pad",
+                item_list: [
+                    
+                    ...get_my_contacts(), // ✅ Function is called inside `item_list`
+                    
+                ]
+            }
+        ]
+        
+    },
+    
+    bottom_section: {
+        start_page: [
             { visible: true, component_type: "button_stack", 
-              item_list: [{ item_type: "button", item_label: "Proceed", action: "step_navigation('verify_identity_1')" }] 
+                item_list: [{ item_type: "button", item_label: "Proceed", action: "render_dynamic_input_interface('create_user')" }] 
             }
         ],
-        getters : [],
-        setters: [],
-        transition_function: {name:"render_start_listing", type:"normal"}
-
-    },
-    {
-        config_name: "verify_identity_1",
-        top_section: [
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "step_navigation('start')" },
-            { visible: true, component_type: "text", label: "Enter Details", position: "center" },
-            { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
+        wallet_start_page: [
+            { visible: true, component_type: "button_stack", 
+                item_list: [
+                    { item_type: "button", item_label: "Activate", action: "step_navigation('verify_identity_1')" },
+                    { item_type: "button", item_label: "Purchase", action: "step_navigation('purchase_page')" },
+                    { item_type: "button", item_label: "Withdraw", action: "step_navigation('withdraw_page')" }
+                ] 
+            }
         ],
-        middle_section: [
+        create_page: [
+            { visible: true, component_type: "button_stack", 
+                item_list: [
+                    { item_type: "button", item_label: "Proceed" },
+                    
+                ] 
+            }
+        ],
+        contact_page: [
+            { visible:true, component_type: "navbar", 
+                item_list: [
+                { item_type: "navbar_item", icon: "fa-solid fa-address-book", label: "Contacts" },
+                { item_type: "navbar_item", icon: "fa-solid fa-wallet", label: "Wallet" },
+                { item_type: "navbar_item", icon: "fa-solid fa-comments", label: "Chats" },
+                { item_type: "navbar_item", icon: "fa-solid fa-user", label: "Profile" }
+                ]
+            }
+        ],
+        select_contact_page: [
+            { visible: true, component_type: "button_stack", 
+                item_list: [
+                    { item_type: "button", item_label: "Proceed", action: "process_select()" },
+                   
+                ] 
+            }
+        ],
+    },
+
+    create_section: {
+        create_user: [
             { 
                 visible: true, 
                 component_type: "input_field", 
-                label: "Your Email", 
-                country: get_country(), 
-                placeholder: "Your email address",
-                id: "email"
-            }
-        ],
-        bottom_section: [
-            { visible: true, component_type: "button_stack", 
-              item_list: [{ item_type: "button", item_label: "Proceed", action: "step_navigation('verify_identity_2')" }] 
-            }
-        ],
-        getters : [],
-        setters: [],
-        transition_function: {name:"render_start_listing_2", type:"input"}
-    },
-    {
-        config_name: "verify_identity_2",
-        top_section: [
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "step_navigation('verify_identity_1')" },
-            { visible: true, component_type: "text", label: "Enter Confirmation Code", position: "center" },
-            { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
-        ],
-        middle_section: [
+                placeholder: "Enter your email", 
+                id: "email_input", 
+                name: "email", 
+                action: "verify_email" // Add a valid processor function name
+            },
             { 
                 visible: true, 
                 component_type: "input_field", 
-                label: "Confirmation Code", 
-                placeholder: "Enter the code sent to your email",
-                id: "otp_code"
+                placeholder: "Enter verification code", 
+                id: "verification_code_input", 
+                name: "otp_secret", 
+                action: "verify_code" // Add a valid processor function name
             }
         ],
-        bottom_section: [
-            { visible: true, component_type: "button_stack", 
-              item_list: [
-                { item_type: "button", item_label: "Confirm", action: "step_navigation('chat_listing')" }] 
+        create_contact: [
+            { 
+                visible: true, 
+                component_type: "input_field", 
+                placeholder: "Enter contact name", 
+                id: "contact_name_input", 
+                name: "contact_name", 
+                action: "validate_contact_name" // Processor for this input
+            },
+            { 
+                visible: true, 
+                component_type: "input_field", 
+                placeholder: "Enter contact email", 
+                id: "contact_email_input", 
+                name: "contact_email", 
+                action: "validate_contact_email" // Processor for this input
+            },
+            { 
+                visible: true, 
+                component_type: "input_field", 
+                placeholder: "Enter contact digits", 
+                id: "contact_digits_input", 
+                name: "contact_digits", 
+                action: "validate_contact_digits" // Processor for this input
             }
-        ],
-        getters : [],
-        setters: [],
-        transition_function: {name:"render_start_listing_3", type:"input"}
+            
+        ]
     }
+};
 
-]
+window.ui_structure = ui_structure;
 
-
-contact_interface_ui_config = [
-    {
-        top_section : [],
-        middle_section : [],
-        bottom_section : [],
-        getters : [],
-        setters: [],
-        transition_function: "render_contact_listing"
-    },
-    {
-        top_section : [],
-        middle_section: [],
-        bottom_section:[],
-        getters: [],
-        setters: [],
-        transition_function: "render_contact_create"
-    }
-]
-
-
-chat_interface_ui_config = [
-    {
-        top_section : [],
-        middle_section : [],
-        bottom_section : [],
-        getters : [],
-        setters: [],
-        transition_function: "render_chat_listing"
-    },
-    {
-        top_section : [],
-        middle_section: [],
-        bottom_section:[],
-        getters: [],
-        setters: [],
-        transition_function: "render_chat_listing"
-    }
-]
-
-chat_message_interface_ui_config = [
-    {
-        top_section : [],
-        middle_section : [],
-        bottom_section : [],
-        getters : [],
-        setters: [],
-        polling: true,
-        transition_function: "render_chat_message_listing"
-    },
-]
-
-
-personal_profile_interface_ui_config = [
-    {
-        top_section : [],
-        middle_section : [],
-        bottom_section : [],
-        getters : [],
-        setters: [],
-        transition_function: "render_personal_profile"
-    }
-]
-
-
-other_profile_interface_ui_config = [
-    {
-        top_section : [],
-        middle_section : [],
-        bottom_section : [],
-        getters : [],
-        setters: [],
-        transition_function: "render_other_profile"
-    }
-]
-
-
-group_profile_interface_ui_config = [
-    {
-        top_section : [],
-        middle_section : [],
-        bottom_section : [],
-        getters : [],
-        setters: [],
-        transition_function: "render_group_profile"
-    }
-]
-
-
-wallet_interface_ui_config = [
-    {
-        top_section : [],
-        middle_section : [],
-        bottom_section : [],
-        getters : [],
-        setters: [],
-        transition_function: "render_wallet_interface"
-    },
-    {
-        top_section : [],
-        middle_section: [],
-        bottom_section:[]
-    },
-    {
-        top_section: [],
-        middle_section: [],
-        bottom_section: []
-    },
-    {
-        top_section : [],
-        middle_section : [],
-        bottom_section : []
-    },
-    {
-        top_section : [],
-        middle_section: [],
-        bottom_section:[]
-    },
-    {
-        top_section: [],
-        middle_section: [],
-        bottom_section: []
-    },
-    {
-        top_section : [],
-        middle_section : [],
-        bottom_section : []
-    },
-    {
-        top_section : [],
-        middle_section: [],
-        bottom_section:[]
-    },
-    {
-        top_section: [],
-        middle_section: [],
-        bottom_section: []
-    },
-    {
-        top_section : [],
-        middle_section : [],
-        bottom_section : []
-    },
-    {
-        top_section : [],
-        middle_section: [],
-        bottom_section:[]
-    }
-]
