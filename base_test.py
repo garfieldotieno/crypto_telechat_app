@@ -51,15 +51,17 @@ for contact in contacts_payload:
 # Create 4 Single Chats (created by test user)
 single_chats_payload = [
     {
-        "creator_id": 1,  # Test user
+        "creator_id": 2,  # Test user
         "chat_type": "single"
     }
     for _ in range(4)
 ]
 
-for chat in single_chats_payload:
-    response = requests.post(f"{BASE_URL}/chat/single", json=chat)
-    print(response.json())
+
+def add_single_chats():
+    for chat in single_chats_payload:
+        response = requests.post(f"{BASE_URL}/chat/single", json=chat)
+        print(response.json())
 
 # Add Chat Members for Single Chats
 single_chat_members_payload = [
@@ -91,6 +93,7 @@ group_chat_members_payload = [
     }
     for i in range(2, 8)  # Users 2 to 7
 ]
+
 
 for member in group_chat_members_payload:
     response = requests.post(f"{BASE_URL}/chat/member", json=member)

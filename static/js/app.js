@@ -242,6 +242,10 @@ function is_registerd(){
     }
 }
 
+function get_user_wallet(){
+    console.log('calling get_user_wallet for information');
+}
+
 
 function get_my_contacts() {
     console.log("Fetching contacts...");
@@ -278,7 +282,7 @@ function get_my_contacts() {
         return contacts.map(contact => ({
             item_type: "list_item_contact",
             label: contact.contact_name,
-            app_user_id:contact.app_user_id,
+            id:contact.id,
             status: "online" // Default status
         }));
 
@@ -287,7 +291,6 @@ function get_my_contacts() {
         return [];
     }
 }
-
 
 
 const contact_page_data_template = {
@@ -304,14 +307,18 @@ const contact_page_data_template = {
 const resource_selection_data_template = {
     selected_data: []
 }
-function load_resource_selection_data() {
+
+function load_resource_selection_data(resource_type) {
     console.log("calling load_resource_selection_data");
+
     data = encodeData(resource_selection_data_template);
     localStorage.setItem('resource_selection_data', data);
+    
     console.log("Resource selection data loaded:", resource_selection_data_template);
 }
+ 
 function update_resource_selection_data(data) {
-    console.log("calling update_resource_selection_data with data:", data);;
+    console.log("calling update_resource_selection_data with data:", data);
     let resourceSelectionData = localStorage.getItem('resource_selection_data');
     if (!resourceSelectionData) {
         console.warn("No resource_selection_data found in localStorage");
@@ -328,6 +335,8 @@ function update_resource_selection_data(data) {
         console.error("Error parsing resource_selection_data:", error);
     }
 }
+
+
 function clear_resource_selection_data() {  
     console.log("calling clear_resource_selection_data");
     localStorage.removeItem('resource_selection_data');
@@ -341,6 +350,7 @@ function load_contact_data() {
     localStorage.setItem('contact_page_data', data);
     console.log("Contact page data loaded:", contact_page_data_template);
 }
+
 
 function update_contact_data(data) {
     console.log("calling update_contact_data with data:", data);
@@ -423,7 +433,8 @@ function get_my_chats() {
             item_type: "list_item_chat",
             label: chat.chat_type === "single" ? `Chat ${chat.id}` : `Group ${chat.id}`,
             last_message: "Tap to open chat", // Placeholder text
-            notification_badge: "" // No unread count in API response
+            notification_badge: "", // No unread count in API response
+            id:chat.id
         }));
 
     } catch (error) {
@@ -432,9 +443,42 @@ function get_my_chats() {
     }
 }
 
-const chat_page_data_template = {
-    chat_list: get_my_chats(),
+
+const create_chat_data_template = {
+    primary_input:[],
     selected_data: []
+}
+
+function load_create_chat_data(){
+    console.log('loading create chat data');
+    data = encodeData(create_chat_data_template);
+    localStorage.setItem('create_chat_page_data', data);
+    console.log("Contact page data loaded:", create_chat_data_template);
+}
+
+function update_create_chat_data(data){
+    console.log('updating create chat data');
+    let createChatPageData = localStorage.getItem('create_chat_page_data');
+    if (!createChatPageData) {
+        console.warn("No resource_selection_data found in localStorage");
+        return;
+    }
+    try {
+        let parsedData = JSON.parse(createChatPageData); 
+        // update using array appenging
+        parsedData.selected_data.push(data);
+        // Save the updated data back to localStorage
+        localStorage.setItem('create_chat_page_data', encodeData(parsedData));
+        console.log("Updated create_chat_page_data in localStorage:", parsedData);
+    } catch (error) {
+        console.error("Error parsing create_chat_page_data:", error);
+    }
+}
+
+function clear_create_chat_data(){
+    console.log('clear create chat data');
+    localStorage.removeItem('create_chat_page_data');
+    console.log("create_chat_page_data cleared from localStorage");
 }
 
 

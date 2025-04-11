@@ -39,9 +39,16 @@ const ui_structure = {
             { visible: true, component_type: 'item_search', placeholder: "Search"}
         ],
         chat_page: [
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left", action:"render_chat_listing('select_many')" },
             { visible: true, component_type: "text", label: "Chat", position: "center" },
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-ellipsis-v", label: "Options", position: "right" }
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Options", position: "right", action: "render_dynamic_input_interface('create_chat')" },
+            { visible: true, component_type: 'item_search', placeholder: "Search"}
+        ],
+        select_chat_page:[
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_chat_listing('normal')"},
+            { visible: true, component_type: "text", label: "Select Chat", position: "center" },
+            { visible: false, component_type: "icon_label", icon: "fa-solid fa-edit", label: "Edit", position: "right" },
+            { visible: true, component_type: 'item_search', placeholder: "Search"}
         ],
         create_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_start()" },
@@ -80,8 +87,8 @@ const ui_structure = {
         personal_profile_page: [
             { visible: true, component_type: "profile_image", img_src: "static/images/background_one.jpeg" },
             { visible: true, component_type: "profile_background_image", img_src: "static/images/samurai.jpeg" },
-            { visible: true, component_type: "separation_title", label: "Information" },
-            { visible: true, component_type: "info_section", action: "show_profile_information()" },
+            { visible: true, component_type: "separation_title", label: "Wallet" },
+            { visible: true, component_type: "info_section", action: "get_user_wallet()" },
             { visible: true, component_type: "label_item", label: "Username", action: "copy_username()" },
             { visible: true, component_type: "label_item", label: "Email", action: "copy_email()" },
             { visible: true, component_type: "label_item", label: "Wallet", action: "copy_wallet()" }
@@ -101,11 +108,16 @@ const ui_structure = {
             {
                 visible: true,
                 component_type: "list_pad",
-                item_list: [
-                    
-                    ...get_my_contacts(), // ✅ Function is called inside `item_list`
-                    
-                ]
+                component_owner: "contact_page",
+                item_list: []
+            }
+        ],
+        chat_page : [
+            {
+                visible: true,
+                component_type: "list_pad",
+                component_owner: "chat_page",
+                item_list: []
             }
         ]
         
@@ -152,6 +164,24 @@ const ui_structure = {
                 ] 
             }
         ],
+        chat_page: [
+            { visible:true, component_type: "navbar", 
+                item_list: [
+                { item_type: "navbar_item", icon: "fa-solid fa-address-book", label: "Contacts" },
+                { item_type: "navbar_item", icon: "fa-solid fa-wallet", label: "Wallet" },
+                { item_type: "navbar_item", icon: "fa-solid fa-comments", label: "Chats" },
+                { item_type: "navbar_item", icon: "fa-solid fa-user", label: "Profile" }
+                ]
+            }
+        ],
+        select_chat_page: [
+            { visible: true, component_type: "button_stack", 
+                item_list: [
+                    { item_type: "button", item_label: "Proceed", action: "process_chat_select()" },
+                   
+                ] 
+            }
+        ]
     },
 
     create_section: {
@@ -173,6 +203,7 @@ const ui_structure = {
                 action: "verify_code" // Add a valid processor function name
             }
         ],
+
         create_contact: [
             { 
                 visible: true, 
@@ -199,9 +230,34 @@ const ui_structure = {
                 action: "validate_contact_digits" // Processor for this input
             }
             
+        ],
+
+        create_chat: [
+            { 
+                visible: true, 
+                component_type: "input_select_field", 
+                placeholder: "Type", 
+                id: "chat_type_input", 
+                name: "chat_type", 
+                action: "process_chat_type" // Processor for this input
+            },
+            {
+                visible: true,
+                component_type: "input_field",
+                placeholder: "Group Name",
+                id: "chat_group_name_input",
+                name: "chat_type",
+                action: "process_group_name"
+            },
+            {
+                visible:true,
+                component_type: "contact_list_select",
+                action:"process_create_chat"
+                
+            }
         ]
     }
 };
 
-window.ui_structure = ui_structure;
+// window.ui_structure = ui_structure;
 

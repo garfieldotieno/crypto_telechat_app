@@ -71,6 +71,7 @@ class User(db.Model):
     otp_secret = db.Column(db.String(16), nullable=False)
     wall_image_url = db.Column(db.String(120), nullable=True)
     profile_image_url = db.Column(db.String(120), nullable=True)
+    registerd_state = db.Column(db.Boolean(), nullable=False, default=True)
 
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
@@ -97,7 +98,7 @@ class Contact (db.Model):
 
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-
+    
     def to_dict(self):
         result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
         for key, value in result.items():
@@ -105,6 +106,7 @@ class Contact (db.Model):
                 result[key] = value.isoformat()
         return result
     
+
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -119,6 +121,7 @@ class Group(db.Model):
             if isinstance(value, datetime):
                 result[key] = value.isoformat()
         return result
+
 
 
 class Chat(db.Model):
@@ -392,6 +395,7 @@ class AddChatMember(Resource):
             return {"message":"Error adding chat member : {e}"}
 
        
+
 class CreateSingleChatMessage(Resource):
     def post(self):
         data = request.form
@@ -697,7 +701,7 @@ def render_app():
 
 @app.route('/api/user/<int:user_id>/chats', methods=['GET'])
 def list_user_chats(user_id):
-    chats = Chat.query.filter_by(creator_id=user_id).all()
+    chats = Chat.query.filter_by(creator_id=user_id).order_by(Chat.id).all()
     return jsonify([chat.to_dict() for chat in chats])
 
 # requires more work 
@@ -711,6 +715,30 @@ def list_involved_chats(user_id):
     chats = Chat.query.filter(Chat.id.in_(chat_ids), Chat.creator_id != user_id).all()
     
     return jsonify([chat.to_dict() for chat in chats])
+
+
+@app.route('/api/user/<int:user_id>/chats', methods=['POST'])
+def delete_user_chats(user_id):
+    data = request.get_json()
+    print(f"calling delete user chats with data : {data} for user_id {user_id}")
+    
+    id_payload = data.get('selected_data')
+
+    delete_list = [select_item['chat_id'] for select_item  in id_payload]
+
+    try:
+        for id in delete_list:
+            print(f"attempting to delete contact with id : {id}")
+            chat = Chat.query.filter_by(id=id).first()
+            print(f"fetched chat is {chat.id}")
+            db.session.delete(chat)
+            db.session.commit()
+        
+        return jsonify({"delete":True})
+        
+    except Exception as e:
+        return jsonify({"delete":False, "error":f"{e}"})
+
 
 api.add_resource(CreateSingleAccount, '/api/wallet/single')
 api.add_resource(CreateGroupAccount, '/api/wallet/group')
@@ -732,8 +760,37 @@ api.add_resource(CreateContact, '/api/contact')
 
 @app.route('/api/user/<int:user_id>/contacts', methods=['GET'])
 def list_user_contacts(user_id):
-    contacts = Contact.query.filter_by(adding_user_id=user_id).all()
+    contacts = Contact.query.filter_by(adding_user_id=user_id).order_by(Contact.id).all()
     return jsonify([contact.to_dict() for contact in contacts])
+
+
+@app.route('/api/user/<int:user_id>/contacts', methods=['POST'])
+def delete_user_contacts(user_id):
+    data = request.get_json()
+    print(f"calling delete user contacts with data : {data} for user_id {user_id}")
+    
+    id_payload = data.get('selected_data')
+
+    delete_list = [select_item['contact_id'] for select_item  in id_payload]
+
+    try:
+        for id in delete_list:
+            print(f"attempting to delete contact with id : {id}")
+            contact = Contact.query.filter_by(id=id).first()
+            print(f"fetched contact is {contact.contact_email}")
+            db.session.delete(contact)
+            db.session.commit()
+        
+        return jsonify({"delete":True})
+        
+    except Exception as e:
+        return jsonify({"delete":False, "error":f"{e}"})
+
+    
+
+    
+
+
 
 @app.route('/')
 def index():

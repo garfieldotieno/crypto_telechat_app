@@ -85,9 +85,9 @@ function verify_code(inputValue, next) {
                 } 
             })
             .then((data) => {
-                console.log("User data submitted successfully:", data);
+                console.log("User data submitted successfully with return:", data);
                 init_user(data.data); // Pass the response data to init_user
-                update_user_data({ registerd_state:true});
+                // update_user_data({ registerd_state:true});
                 render_resource_listing_interface('contact_page');
             })
             .catch((error) => {
@@ -119,6 +119,7 @@ function validate_contact_name(inputValue, next) {
     console.log("Contact name is valid and saved to contact_page_data.");
     next(); // Validation passed, proceed to the next input
 }
+
 
 // Validate contact email
 function validate_contact_email(inputValue, next) {
@@ -193,9 +194,8 @@ function add_contact(name, email, phone) {
         contact_email: email,
         contact_digits: phone,
         adding_user_id: app_user_data.id,
-        app_user : true,
+        app_user : false,
         app_user_id : 2,
-
     };
 
     console.log(`posting data should be : ${contactData}`)
@@ -231,5 +231,152 @@ function add_contact(name, email, phone) {
 }
 
 function process_select(){
+    let action =  'delete'
     console.log("Processing select...");
+    let resource_selection = decodeData(localStorage.getItem('resource_selection_data'))
+    if (resource_selection){
+        if(action === "delete"){
+            delete_contact(resource_selection)
+        }
+    }
+}
+
+
+function delete_contact(data){
+    console.log('calling delete_contact',data)
+    clear_resource_selection_data();
+    calling_delete_user_id = decodeData(localStorage.getItem('userData')).id
+    // Post the contact data to the server
+    fetch(`api/user/${calling_delete_user_id}/contacts`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    }).then((response) => {
+        if (response.status === 200 ){
+            console.log("Contact deleted successfully.");
+            return response.json();
+        } else if (response.status === 400) {
+            throw new Error("Invalid contact data.");
+        } else {
+            throw new Error("Unexpected error occurred while deleting contact.");
+        }
+    })
+    .then((response_data) => {
+        console.log("Server response for deleted contact:", response_data);
+        render_contact_listing('normal')
+    })
+    .catch((error) => {
+        console.error("Error adding contact:", error.message);
+        alert("Failed to delete contact. Please try again.");
+    });
+
+}
+
+function process_chat_select(){
+    let action =  'delete'
+    console.log("Processing select...");
+    let resource_selection = decodeData(localStorage.getItem('resource_selection_data'))
+    if (resource_selection){
+        if(action === "delete"){
+            delete_chat(resource_selection)
+        }
+    }
+}
+
+function delete_chat(data){
+    console.log('calling delete_chat', data);
+
+    clear_resource_selection_data();
+    calling_delete_user_id = decodeData(localStorage.getItem('userData')).id
+    // Post the contact data to the server
+    fetch(`api/user/${calling_delete_user_id}/chats`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    }).then((response) => {
+        if (response.status === 200 ){
+            console.log("Chat deleted successfully.");
+            return response.json();
+        } else if (response.status === 400) {
+            throw new Error("Invalid chaft data.");
+        } else {
+            throw new Error("Unexpected error occurred while deleting chat.");
+        }
+    })
+    .then((response_data) => {
+        console.log("Server response for deleted chat:", response_data);
+        render_contact_listing('normal')
+    })
+    .catch((error) => {
+        console.error("Error adding chat:", error.message);
+        alert("Failed to delete chat. Please try again.");
+    });
+}
+
+
+function process_chat_type(inputValue,next){
+    console.log(`calling process_chat_type`, inputValue);
+    load_create_chat_data();
+    update_create_chat_data({primary_input:[{chat_type:inputValue}]})
+    next()
+    
+}
+
+function process_group_name(inputValue,next){
+    console.log('calling process_group_name', inputValue);
+    update_create_chat_data({primary_input:[{chat_name:inputValue}]})
+    next()
+}
+
+
+function process_create_chat(inputValue, next){
+    console.log('calling process_create_chat', inputValue);
+    update_create_chat_data({selected_data: [inputValue]})
+    next()
+}
+
+
+function create_single_chat(data){
+    console.log('calling create single chat', data);
+
+    // Post the contact data to the server
+    fetch(`api/chat/single`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    }).then((response) => {
+        if (response.status === 201 ){
+            console.log("single chat created successfully.");
+            return response.json();
+        } else if (response.status === 400) {
+            throw new Error("invalid single chat data");
+        } else {
+            throw new Error("Unexpected error occurred while creating single chat.");
+        }
+    })
+    .then((response_data) => {
+        console.log("Server response for created single chat:", response_data);
+        render_chat_listing('normal')
+    })
+    .catch((error) => {
+        console.error("Error adding single chat:", error.message);
+        alert("Failed to add single chat. Please try again.");
+    });
+
+
+}
+
+
+function create_group_chat(){
+    console.log('calling create group chat');
+}
+
+function add_chat_member(){
+    console.log('calling add chat member')
 }
