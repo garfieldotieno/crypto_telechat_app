@@ -274,6 +274,7 @@ function delete_contact(data){
 
 }
 
+
 function process_chat_select(){
     let action =  'delete'
     console.log("Processing select...");
@@ -318,63 +319,78 @@ function delete_chat(data){
 }
 
 
-function process_chat_type(inputValue,next){
+function process_chat_type(inputValue, next) {
     console.log(`calling process_chat_type`, inputValue);
     load_create_chat_data();
-    update_create_chat_data({primary_input:[{chat_type:inputValue}]})
-    next()
-    
-}
+    update_create_chat_data({ primary_input: [{ chat_type: inputValue }] });
 
-function process_group_name(inputValue,next){
-    console.log('calling process_group_name', inputValue);
-    update_create_chat_data({primary_input:[{chat_name:inputValue}]})
-    next()
-}
+    if (inputValue === "single") {
+        console.log("Chat type is single. Skipping group name and showing contact list.");
+        render_dynamic_input_interface2("contact_list_select", "select_one");
+    } else if (inputValue === "group") {
+        console.log("Chat type is group. Showing group name input.");
+        render_dynamic_input_interface2("chat_group_name_input");
+    }
 
-
-function process_create_chat(inputValue, next){
-    console.log('calling process_create_chat', inputValue);
-    update_create_chat_data({selected_data: [inputValue]})
-    next()
+    next();
 }
 
 
-function create_single_chat(data){
-    console.log('calling create single chat', data);
+function process_group_name(inputValue, next) {
+    console.log("calling process_group_name", inputValue);
+    update_create_chat_data({ primary_input: [{ chat_name: inputValue }] });
 
-    // Post the contact data to the server
-    fetch(`api/chat/single`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-    }).then((response) => {
-        if (response.status === 201 ){
-            console.log("single chat created successfully.");
-            return response.json();
-        } else if (response.status === 400) {
-            throw new Error("invalid single chat data");
-        } else {
-            throw new Error("Unexpected error occurred while creating single chat.");
-        }
-    })
-    .then((response_data) => {
-        console.log("Server response for created single chat:", response_data);
-        render_chat_listing('normal')
-    })
-    .catch((error) => {
-        console.error("Error adding single chat:", error.message);
-        alert("Failed to add single chat. Please try again.");
-    });
+    console.log("Group name entered. Showing contact list for multiple selection.");
+    render_dynamic_input_interface2("contact_list_select", "select_many");
 
-
+    next();
 }
 
 
-function create_group_chat(){
-    console.log('calling create group chat');
+
+
+
+function submit_create_chat() {
+    console.log("Submitting create chat data...");
+
+    const createChatPageData = localStorage.getItem("create_chat_page_data");
+    if (!createChatPageData) {
+        console.error("No create_chat_page_data found in localStorage.");
+        return;
+    }
+
+    try {
+        const parsedData = JSON.parse(createChatPageData);
+
+        // Prepare the data for posting
+        const postData = {
+            primary_input: parsedData.primary_input,
+            selected_data: parsedData.selected_data,
+        };
+
+        console.log("Posting data:", postData);
+
+        // Post the data to the server
+        fetch("/api/create_chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(postData),
+        })
+            .then((response) => {
+                if (response.ok) {
+                    console.log("Chat created successfully.");
+                } else {
+                    console.error("Failed to create chat:", response.statusText);
+                }
+            })
+            .catch((error) => {
+                console.error("Error creating chat:", error);
+            });
+    } catch (error) {
+        console.error("Error parsing create_chat_page_data:", error);
+    }
 }
 
 function add_chat_member(){

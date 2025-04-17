@@ -369,7 +369,7 @@ function render_start() {
 }
 
 
-function render_personal_profile() {
+async function render_personal_profile() {
     console.log("Rendering personal profile page...");
 
     // Clear previous content
@@ -388,26 +388,33 @@ function render_personal_profile() {
     centerContainer.classList.add(centerContainerClass);
     container.appendChild(centerContainer);
 
-    // Parse UI structure for personal profile page
-    let uiStructure = ui_structure.top_section.personal_profile_page;
+    try {
+        // Dynamically update the personal profile data
+        await ui_structure.update_personal_profile_data();
 
-    // Build top section
-    if (uiStructure && uiStructure.some(item => item.visible)) {
-        centerContainer.appendChild(create_top_section(uiStructure));
-    }
+        // Parse UI structure for personal profile page
+        let topSectionConfig = ui_structure.top_section.personal_profile_page;
+        let middleSectionConfig = ui_structure.middle_section.personal_profile_page;
+        let bottomSectionConfig = ui_structure.bottom_section.personal_profile_page;
 
-    // Build middle section for personal profile page
-    let middleSectionConfig = ui_structure.middle_section.personal_profile_page;
-    if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
-        let middleSection = create_middle_section(middleSectionConfig);
-        centerContainer.appendChild(middleSection);
-    }
+        // Build top section
+        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+            centerContainer.appendChild(create_top_section(topSectionConfig));
+        }
 
-    // Build bottom section for personal profile page
-    let bottomSectionConfig = ui_structure.bottom_section.personal_profile_page;
-    if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
-        let bottomSection = create_bottom_section(bottomSectionConfig);
-        centerContainer.appendChild(bottomSection);
+        // Build middle section for personal profile page
+        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+            let middleSection = create_middle_section(middleSectionConfig);
+            centerContainer.appendChild(middleSection);
+        }
+
+        // Build bottom section for personal profile page
+        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+            let bottomSection = create_bottom_section(bottomSectionConfig);
+            centerContainer.appendChild(bottomSection);
+        }
+    } catch (error) {
+        console.error("Error rendering personal profile page:", error);
     }
 }
 
@@ -458,6 +465,7 @@ function render_group_profile() {
 function render_other_profile() {
     console.log("Rendering other profile page...");
     // Clear previous content
+    
 }
 
 function render_wallet_start() {
@@ -792,6 +800,50 @@ function render_dynamic_input_interface(input_page) {
         render_create_user(); // Handle user creation
     } else {
         console.error(`No configuration found for input page: ${input_page}`);
+    }
+}
+
+function render_dynamic_input_interface2(componentId, mode = null) {
+    console.log(`Rendering dynamic input interface for component: ${componentId}, mode: ${mode}`);
+
+    // Clear previous content
+    document.body.innerHTML = "";
+
+    // Fetch the component configuration from the UI structure
+    const componentConfig = ui_structure.create_section.create_chat.find(
+        (component) => component.id === componentId
+    );
+
+    if (!componentConfig) {
+        console.error(`Component with ID ${componentId} not found.`);
+        return;
+    }
+
+    // Render the component
+    if (componentConfig.component_type === "input_field") {
+        // Render input field
+        const inputField = document.createElement("input");
+        inputField.type = "text";
+        inputField.placeholder = componentConfig.placeholder;
+        inputField.id = componentConfig.id;
+        inputField.name = componentConfig.name;
+
+        const proceedButton = document.createElement("button");
+        proceedButton.textContent = "Proceed";
+        proceedButton.onclick = () => {
+            const inputValue = inputField.value;
+            if (componentConfig.action && typeof window[componentConfig.action] === "function") {
+                window[componentConfig.action](inputValue, () => {
+                    console.log("Proceeding to the next step...");
+                });
+            }
+        };
+
+        document.body.appendChild(inputField);
+        document.body.appendChild(proceedButton);
+    } else if (componentConfig.component_type === "contact_list_select") {
+        // Render contact list
+        render_contact_listing(mode);
     }
 }
 

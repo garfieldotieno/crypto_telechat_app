@@ -18,9 +18,9 @@ const ui_structure = {
             { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
         ],
         personal_profile_page: [
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_contact_listing('normal')"},
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left"},
             { visible: true, component_type: "text", label: "Profile", position: "center" },
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-edit", label: "Edit", position: "right" }
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-right-from-bracket", label: "Edit", position: "right" }
         ],
         other_profile_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
@@ -88,10 +88,7 @@ const ui_structure = {
             { visible: true, component_type: "profile_image", img_src: "static/images/background_one.jpeg" },
             { visible: true, component_type: "profile_background_image", img_src: "static/images/samurai.jpeg" },
             { visible: true, component_type: "separation_title", label: "Wallet" },
-            { visible: true, component_type: "info_section", action: "get_user_wallet()" },
-            { visible: true, component_type: "label_item", label: "Username", action: "copy_username()" },
-            { visible: true, component_type: "label_item", label: "Email", action: "copy_email()" },
-            { visible: true, component_type: "label_item", label: "Wallet", action: "copy_wallet()" }
+            { visible: true, component_type: "info_section", action: "get_user_wallet()" }  
         ],
         other_profile_page: [
             { visible: true, component_type: "profile_image", img_src: "static/images/background_two.jpeg" },
@@ -181,6 +178,16 @@ const ui_structure = {
                    
                 ] 
             }
+        ],
+        personal_profile_page: [
+            { visible: true, component_type: "button_stack", 
+                item_list: [
+                    { item_type: "button", item_label: "Username", action: "copy_username()" },
+                    { item_type: "button", item_label: "Email", action: "copy_email()" },
+                    { item_type: "button", item_label: "Wallet", action: "copy_wallet()" }
+                    
+                ] 
+            }
         ]
     },
 
@@ -256,6 +263,45 @@ const ui_structure = {
                 
             }
         ]
+    },
+
+    // Function to dynamically update personal_profile_page
+    update_personal_profile_data: async function () {
+        console.log("Updating personal profile data...");
+
+        try {
+            // Fetch user data from the backend
+            const userData = await fetch_user_backend_data();
+
+            if (!userData) {
+                console.warn("No user data found.");
+                return;
+            }
+
+            console.log("Fetched user data:", userData);
+
+            // Update the middle_section.personal_profile_page dynamically
+            this.middle_section.personal_profile_page = [
+                { visible: true, component_type: "profile_image", img_src: userData.profile_image_url || "static/images/default_profile.png" },
+                { visible: true, component_type: "profile_background_image", img_src: userData.wall_image_url || "static/images/default_background.png" },
+                
+                
+            ];
+
+            this.bottom_section.personal_profile_page = [
+                { visible: true, component_type: "button_stack", 
+                    item_list: [
+                        { item_type: "button", item_label: `${userData.username}`, action: `copy_to_clipboard('${userData.username}')` },
+                        { item_type: "button", item_label: `${userData.email}`, action: `copy_to_clipboard('${userData.email}')` },
+                        { item_type: "button", item_label: `${userData.wallet_id || "N/A"}`, action: `copy_to_clipboard('${userData.wallet_id || "N/A"}')` }
+                    ] 
+                }
+            ];
+
+            console.log("Updated personal_profile_page:", this.middle_section.personal_profile_page);
+        } catch (error) {
+            console.error("Error updating personal profile data:", error);
+        }
     }
 };
 

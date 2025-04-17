@@ -158,8 +158,8 @@ const welcome_and_register_page_data_template = {
     username: 'user1',
     email: "user1@example.com",
     otp_secret: "",
-    wall_image_url: "test_media/background_one.jpeg",
-    profile_image_url: "test_media/otieno.jpeg"
+    wall_image_url: "static/images/samurai.jpeg",
+    profile_image_url: "static/images/background_one.jpeg"
 };
 
 
@@ -204,6 +204,48 @@ function fetch_user_data(){
         return null;
     }
 }
+
+async function fetch_user_backend_data() {
+    console.log("Fetching user data from backend...");
+
+    let registerData = localStorage.getItem('userData');
+    if (!registerData) {
+        console.warn("No register_data found in localStorage");
+        return null;
+    }
+
+    // Parse the user data from localStorage
+    let parsedData = JSON.parse(registerData);
+    let user_id = parsedData.id;
+
+    if (!user_id) {
+        console.warn("User ID not found in register_data.");
+        return null;
+    }
+
+    try {
+        // Fetch data from the backend using the Fetch API
+        const response = await fetch(`/api/user/${user_id}`);
+        if (!response.ok) {
+            console.error("Failed to fetch user data:", response.statusText);
+            return null;
+        }
+
+        const userData = await response.json();
+        console.log("Fetched user data:", userData); // Log the fetched data
+
+        // Update localStorage with the fetched data
+        localStorage.setItem('userData', encodeData(userData));
+        console.log("Updated register_data in localStorage:", userData);
+
+        return userData;
+
+    } catch (error) {
+        console.error("Error fetching user data:", error);
+        return null;
+    }
+}
+
 
 function update_user_data(data){
     console.log('calling update_user_data with data:', data);
@@ -317,6 +359,7 @@ function load_resource_selection_data(resource_type) {
     console.log("Resource selection data loaded:", resource_selection_data_template);
 }
  
+
 function update_resource_selection_data(data) {
     console.log("calling update_resource_selection_data with data:", data);
     let resourceSelectionData = localStorage.getItem('resource_selection_data');

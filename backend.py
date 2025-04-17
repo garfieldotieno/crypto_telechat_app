@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api, Resource
 from flask_cors import CORS
@@ -8,13 +9,19 @@ import os
 import random, string
 from datetime import datetime
 import uuid
+import json
+
+
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.sqlite'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
+
 db = SQLAlchemy(app)
 api = Api(app)
+migrate = Migrate(app, db)
 
 # enabe CORS on all routes
 CORS(app)
@@ -226,6 +233,24 @@ class WalletAccountTransaction(db.Model):
                 result[key] = value.isoformat()
         return result
 
+class TransactionLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    event_type = db.Column(db.String(50), nullable=False)  # Type of event (e.g., 'online', 'new_message', etc.)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # User associated with the event
+    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=True)  # Chat associated with the event
+    wallet_account_id = db.Column(db.Integer, nullable=True)  # Wallet account associated with the event
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=True)  # Group associated with the event
+    description = db.Column(db.Text, nullable=True)  # Additional details about the event
+    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())  # Event timestamp
+    event_metadata = db.Column(db.JSON, nullable=True)  # Optional metadata for storing additional structured data
+
+    def to_dict(self):
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
+    
 
 # RESTful API Resources
 class CreateUser(Resource):
@@ -344,19 +369,28 @@ class CreateSingleChat(Resource):
         data = request.get_json()
         creator_id = data.get('creator_id')
         chat_type = 'single'
-        
+
         try:
             chat = Chat(creator_id=creator_id, chat_type=chat_type)
             db.session.add(chat)
             db.session.commit()
-            
+
+            # Log the chat creation in TransactionLog
+            transaction_log = TransactionLog(
+                event_type="chat_created",
+                user_id=creator_id,
+                chat_id=chat.id,
+                description="Single chat created",
+                metadata={"chat_type": chat_type}
+            )
+            db.session.add(transaction_log)
+            db.session.commit()
+
             return {"message": "Single chat created", "chat_id": chat.id}
-        
         except Exception as e:
             db.session.rollback()
-            print(f"\nError creating single chat: {e}\n")
+            print(f"Error creating single chat: {e}")
             return {"message": "Error creating single chat"}, 500
-
 
 class CreateGroupChat(Resource):
     def post(self):
@@ -675,6 +709,30 @@ class SignGroupWithdrawalRequest(Resource):
 class ExportTransactions(Resource):
     pass 
 
+# Authentication
+@app.route('/api/user/login', methods=['POST'])
+def user_login():
+    data = request.get_json()
+    email = data.get('email')
+    otp = data.get('otp')
+
+    if verify_otp(email, otp):
+        user = User.query.filter_by(email=email).first()
+
+        # Log the login event in TransactionLog
+        transaction_log = TransactionLog(
+            event_type="user_login",
+            user_id=user.id,
+            description="User logged in",
+            metadata={"email": email}
+        )
+        db.session.add(transaction_log)
+        db.session.commit()
+
+        return {"message": "Login successful", "user_id": user.id}
+    return {"message": "Invalid OTP"}, 400
+
+
 
 # Register API resources
 api.add_resource(CreateUser, '/api/user')
@@ -686,6 +744,35 @@ def get_user(user_id):
     if user:
         return jsonify(user.to_dict())
     return {"message": "User not found"}, 404
+
+# delete user
+@app.route('/api/user/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    user = User.query.get(user_id)
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        return {"message": "User deleted"}
+    return {"message": "User not found"}, 404
+
+# update user
+@app.route('/api/user/<int:user_id>', methods=['PUT'])
+def update_user(user_id):
+    data = request.get_json()
+    user = User.query.get(user_id)
+    if user:
+        user.username = data.get('username', user.username)
+        user.email = data.get('email', user.email)
+        user.otp_secret = data.get('otp_secret', user.otp_secret)
+        user.wall_image_url = data.get('wall_image_url', user.wall_image_url)
+        user.profile_image_url = data.get('profile_image_url', user.profile_image_url)
+
+        db.session.commit()
+        return {"message": "User updated", "user": user.to_dict()}
+    return {"message": "User not found"}, 404
+
+
+
 
 api.add_resource(CreateSingleChat, '/api/chat/single')
 api.add_resource(CreateGroupChat, '/api/chat/group')
@@ -752,9 +839,6 @@ api.add_resource(SendToGroupAccount, '/api/wallet/send_to_group')
 
 api.add_resource(WithdrawNormal, '/api/wallet/withdraw')
 api.add_resource(WithdrawGroupRequest, '/api/wallet/withdraw_group_request')
-api.add_resource(SignGroupWithdrawalRequest, '/api/wallet/sign_group_withdrawal')
-
-
 
 api.add_resource(CreateContact, '/api/contact')
 
@@ -786,10 +870,66 @@ def delete_user_contacts(user_id):
     except Exception as e:
         return jsonify({"delete":False, "error":f"{e}"})
 
+
+
+@app.route('/api/transactions/export', methods=['GET'])
+def export_transactions():
+    transactions = TransactionLog.query.all()
+    transaction_data = [transaction.to_dict() for transaction in transactions]
+
+    # Example: Export to JSON
+    export_filename = "transactions.json"
+    with open(export_filename, "w") as file:
+        json.dump(transaction_data, file)
+
+    return send_from_directory(directory=".", path=export_filename, as_attachment=True)
+
+
+@app.route('/api/transactions', methods=['POST'])
+def log_transaction():
+    data = request.get_json()
+    print(f"Logging transaction with data: {data}")
+
+    try:
+        transaction = TransactionLog(
+            event_type=data.get('event_type'),
+            user_id=data.get('user_id'),
+            chat_id=data.get('chat_id'),
+            wallet_account_id=data.get('wallet_account_id'),
+            group_id=data.get('group_id'),
+            description=data.get('description'),
+            metadata=data.get('metadata')
+        )
+        db.session.add(transaction)
+        db.session.commit()
+
+        return {"message": "Transaction logged successfully", "transaction_id": transaction.id}, 201
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error logging transaction: {e}")
+        return {"message": "Error logging transaction", "error": str(e)}, 500
     
 
-    
+@app.route('/api/transactions', methods=['GET'])
+def list_transactions():
+    event_type = request.args.get('event_type')
+    user_id = request.args.get('user_id')
+    wallet_account_id = request.args.get('wallet_account_id')
+    chat_id = request.args.get('chat_id')
 
+    query = TransactionLog.query
+
+    if event_type:
+        query = query.filter_by(event_type=event_type)
+    if user_id:
+        query = query.filter_by(user_id=user_id)
+    if wallet_account_id:
+        query = query.filter_by(wallet_account_id=wallet_account_id)
+    if chat_id:
+        query = query.filter_by(chat_id=chat_id)
+
+    transactions = query.order_by(TransactionLog.timestamp.desc()).all()
+    return jsonify([transaction.to_dict() for transaction in transactions])
 
 
 @app.route('/')
