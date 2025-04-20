@@ -421,6 +421,7 @@ function clear_contact_data() {
     console.log("Contact page data cleared from localStorage");
 }
 
+
 function getDevicePlatform() {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
 

@@ -112,7 +112,7 @@ function create_middle_section(items) {
             case "info_section":
                 element.classList.add("info_section");
                 element.innerHTML = `
-                    <div class="info_content" onclick="${item.action}">Address</div>
+                    <div class="info_content">${item.label}</div>
                 `;
                 break;
 
@@ -465,7 +465,23 @@ function render_group_profile() {
 function render_other_profile() {
     console.log("Rendering other profile page...");
     // Clear previous content
-    
+
+}
+
+
+function render_wallet_interface(){
+    console.log("rendering for wallet_interface")
+
+    userData = decodeData(localStorage.getItem('userData'))
+
+    if (userData.registerd_wallet){
+        console.log('user wallet is registerd');
+
+
+    } else{
+        console.log('user wallet is not registerd')
+        render_personal_profile();
+    }
 }
 
 function render_wallet_start() {

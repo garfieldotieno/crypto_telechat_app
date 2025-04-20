@@ -12,8 +12,6 @@ import uuid
 import json
 
 
-
-
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.sqlite'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -79,6 +77,8 @@ class User(db.Model):
     wall_image_url = db.Column(db.String(120), nullable=True)
     profile_image_url = db.Column(db.String(120), nullable=True)
     registerd_state = db.Column(db.Boolean(), nullable=False, default=True)
+    registerd_wallet = db.Column(db.Boolean(), nullable=True, default=False)
+    registerd_bio = db.Column(db.String(120), nullable=True, default="User Available")
 
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())

@@ -18,9 +18,9 @@ const ui_structure = {
             { visible: false, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Add", position: "right" }
         ],
         personal_profile_page: [
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left"},
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_start()" },
             { visible: true, component_type: "text", label: "Profile", position: "center" },
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-right-from-bracket", label: "Edit", position: "right" }
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-square-pen", label: "Edit", position: "right" }
         ],
         other_profile_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
@@ -87,8 +87,6 @@ const ui_structure = {
         personal_profile_page: [
             { visible: true, component_type: "profile_image", img_src: "static/images/background_one.jpeg" },
             { visible: true, component_type: "profile_background_image", img_src: "static/images/samurai.jpeg" },
-            { visible: true, component_type: "separation_title", label: "Wallet" },
-            { visible: true, component_type: "info_section", action: "get_user_wallet()" }  
         ],
         other_profile_page: [
             { visible: true, component_type: "profile_image", img_src: "static/images/background_two.jpeg" },
@@ -284,7 +282,9 @@ const ui_structure = {
             this.middle_section.personal_profile_page = [
                 { visible: true, component_type: "profile_image", img_src: userData.profile_image_url || "static/images/default_profile.png" },
                 { visible: true, component_type: "profile_background_image", img_src: userData.wall_image_url || "static/images/default_background.png" },
-                
+                { visible: true, component_type: "separation_title", label: "Bio" },
+                { visible: true, component_type: "info_section", label: userData.registerd_bio },
+                { visible: true, component_type: "separation_title", label: "Actions" }
                 
             ];
 
@@ -293,7 +293,7 @@ const ui_structure = {
                     item_list: [
                         { item_type: "button", item_label: `${userData.username}`, action: `copy_to_clipboard('${userData.username}')` },
                         { item_type: "button", item_label: `${userData.email}`, action: `copy_to_clipboard('${userData.email}')` },
-                        { item_type: "button", item_label: `${userData.wallet_id || "N/A"}`, action: `copy_to_clipboard('${userData.wallet_id || "N/A"}')` }
+                        { item_type: "button", item_label: `${"Login"}`, action: `login_user` }
                     ] 
                 }
             ];
