@@ -31,6 +31,7 @@ for user in transform_payload:
     response = requests.post(f"{BASE_URL}/user", json=user)
     print(response.json())
 
+
 # Create Contacts (10 contacts created by test user)
 contacts_payload = [
     {

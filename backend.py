@@ -7,7 +7,25 @@ from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 import random, string
-from datetime import datetime
+from datetime import datetime, timezone
+import pytz
+
+from web3 import Web3
+
+try:
+    # Connect to the local blockchain
+    web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545/'))
+
+    # Check if the connection is successful
+    if web3.is_connected():
+        print("Connected to the local blockchain")
+        print(f"Current block number: {web3.eth.block_number}")
+    else:
+        print("Failed to connect to the blockchain")
+except Exception as e:
+    print(f"Error connecting to the blockchain: {e}")
+
+
 import uuid
 import json
 
@@ -24,6 +42,14 @@ migrate = Migrate(app, db)
 # enabe CORS on all routes
 CORS(app)
 
+class BaseModelMixin:
+    def to_dict(self):
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                # Ensure the datetime is in UTC and serialize it in ISO 8601 format
+                result[key] = value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+        return result
 
 class email_otps(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -68,9 +94,8 @@ def verify_otp(email, otp):
         return False
     
 
-class User(db.Model):
+class User(db.Model, BaseModelMixin):
     id = db.Column(db.Integer, primary_key=True)
-
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     otp_secret = db.Column(db.String(16), nullable=False)
@@ -79,17 +104,11 @@ class User(db.Model):
     registerd_state = db.Column(db.Boolean(), nullable=False, default=True)
     registerd_wallet = db.Column(db.Boolean(), nullable=True, default=False)
     registerd_bio = db.Column(db.String(120), nullable=True, default="User Available")
-
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    wallet_account = db.relationship('SingleWalletAccount', backref='user', lazy=True)
+    last_login = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
 
-    def to_dict(self):
-        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
-        for key, value in result.items():
-            if isinstance(value, datetime):
-                result[key] = value.isoformat()
-        return result
+    wallet_account = db.relationship('SingleWalletAccount', backref='user', lazy=True)
 
 
 class Contact (db.Model):
@@ -101,7 +120,7 @@ class Contact (db.Model):
     contact_email = db.Column(db.String(120), nullable=False)
 
     app_user = db.Column(db.Boolean, nullable=False, default=True)
-    app_user_id = db.Column(db.Integer, nullable=False)
+    app_user_id = db.Column(db.Integer, nullable=True, default=0)
 
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
@@ -114,10 +133,10 @@ class Contact (db.Model):
         return result
     
 
-
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     creator_id = db.Column(db.Integer, nullable=False)
+    chat_id = db.Column(db.Integer, nullable=False)
     name = db.Column(db.String(80), unique=True, nullable=False)
     
     wallet_account = db.relationship('GroupWalletAccount', backref='group', lazy=True)
@@ -128,7 +147,6 @@ class Group(db.Model):
             if isinstance(value, datetime):
                 result[key] = value.isoformat()
         return result
-
 
 
 class Chat(db.Model):
@@ -233,23 +251,16 @@ class WalletAccountTransaction(db.Model):
                 result[key] = value.isoformat()
         return result
 
-class TransactionLog(db.Model):
+class TransactionLog(db.Model, BaseModelMixin):
     id = db.Column(db.Integer, primary_key=True)
-    event_type = db.Column(db.String(50), nullable=False)  # Type of event (e.g., 'online', 'new_message', etc.)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # User associated with the event
-    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=True)  # Chat associated with the event
-    wallet_account_id = db.Column(db.Integer, nullable=True)  # Wallet account associated with the event
-    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=True)  # Group associated with the event
-    description = db.Column(db.Text, nullable=True)  # Additional details about the event
-    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())  # Event timestamp
-    event_metadata = db.Column(db.JSON, nullable=True)  # Optional metadata for storing additional structured data
-
-    def to_dict(self):
-        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
-        for key, value in result.items():
-            if isinstance(value, datetime):
-                result[key] = value.isoformat()
-        return result
+    event_type = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=True)
+    wallet_account_id = db.Column(db.Integer, nullable=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    event_metadata = db.Column(db.JSON, nullable=True)
     
 
 # RESTful API Resources
@@ -294,6 +305,42 @@ class CreateUser(Resource):
         else:
             return {"message": "Invalid OTP"}, 400
 
+class LoginUser(Resource):
+    def post(self):
+        data = request.get_json()
+        email = data.get('email')
+        otp = data.get('otp')
+
+        print(f"Attempting login for email: {email} with OTP: {otp}")
+
+        # Verify the OTP
+        if verify_otp(email, otp):
+            user = User.query.filter_by(email=email).first()
+
+            if user:
+                # Update the last_login field
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+
+                # Log the login event in TransactionLog
+                transaction_log = TransactionLog(
+                    event_type="user_login",
+                    user_id=user.id,
+                    description="User logged in",
+                    event_metadata={"email": email}
+                )
+                db.session.add(transaction_log)
+                db.session.commit()
+
+                return {
+                    "message": "Login successful",
+                    "user": user.to_dict()
+                }, 200
+            else:
+                return {"message": "User not found"}, 404
+        else:
+            return {"message": "Invalid OTP"}, 400
+        
 
 class CreateContact(Resource):
     def post(self):
@@ -306,14 +353,14 @@ class CreateContact(Resource):
         contact_name = data.get('contact_name')
         contact_email = data.get('contact_email')
         app_user = data.get('app_user')
-        app_user_id = data.get('app_user_id')
+        app_user_id = 0
 
         # Verify if the user is already an app user
         
-        # existing_user = User.query.filter_by(email=contact_email).first()
-        # if existing_user:
-        #     app_user = True
-        #     app_user_id = existing_user.id
+        existing_user = User.query.filter_by(email=contact_email).first()
+        if existing_user:
+            app_user = True
+            app_user_id = existing_user.id
 
         print(f"checking fetched data from data : {adding_user_id}, {contact_digits}, {contact_name}, {contact_email}, {app_user}, {app_user_id}")
         
@@ -329,9 +376,12 @@ class CreateContact(Resource):
             db.session.add(contact)
             db.session.commit()
 
+            contact_otp = generate_otp(contact_email)
+
             return {
                 "message": "Contact created", 
-                "data": contact.to_dict()
+                "data": contact.to_dict(),
+                "otp_data":contact_otp
             }, 201  # No jsonify()
 
         except Exception as e:
@@ -396,20 +446,30 @@ class CreateGroupChat(Resource):
     def post(self):
         data = request.get_json()
         creator_id = data.get('creator_id')
+        group_name = data.get('name')  # Group name provided in the request
         chat_type = 'group'
-        
+
         try:
+            # Step 1: Create a record in the Chat model
             chat = Chat(creator_id=creator_id, chat_type=chat_type)
             db.session.add(chat)
             db.session.commit()
-            
-            return {"message": "Group chat created", "chat_id": chat.id}
-        
+
+            # Step 2: Create a record in the Group model
+            group = Group(creator_id=creator_id, chat_id=chat.id, name=group_name)
+            db.session.add(group)
+            db.session.commit()
+
+            return {
+                "message": "Group chat created successfully",
+                "chat_id": chat.id,
+                "group_id": group.id
+            }, 201
+
         except Exception as e:
             db.session.rollback()
             print(f"\nError creating group chat: {e}\n")
             return {"message": "Error creating group chat"}, 500
-
 
 class AddChatMember(Resource):
     def post(self):
@@ -706,37 +766,64 @@ class SignGroupWithdrawalRequest(Resource):
         return {"message": "Withdrawal request signed"}
 
 
-class ExportTransactions(Resource):
-    pass 
+class LogTransaction(Resource):
+    def post(self):
+        data = request.get_json()
+        print(f"Logging transaction with data: {data}")
+
+        try:
+            # Create a new TransactionLog instance
+            transaction = TransactionLog(
+                event_type=data.get('event_type'),
+                user_id=data.get('user_id'),
+                chat_id=data.get('chat_id'),
+                wallet_account_id=data.get('wallet_account_id'),
+                group_id=data.get('group_id'),
+                description=data.get('description'),
+                event_metadata=data.get('event_metadata')  # Ensure this matches the model field name
+            )
+
+            # Add the transaction to the database session
+            db.session.add(transaction)
+
+            # Commit the transaction to save it to the database
+            db.session.commit()
+
+            return {"message": "Transaction logged successfully", "transaction_id": transaction.id}, 201
+        except Exception as e:
+            # Rollback the session in case of an error
+            db.session.rollback()
+            print(f"Error logging transaction: {e}")
+            return {"message": "Error logging transaction", "error": str(e)}, 500
+
+
+# Register the LogTransaction resource
+api.add_resource(LogTransaction, '/api/transactions')
 
 # Authentication
-@app.route('/api/user/login', methods=['POST'])
-def user_login():
-    data = request.get_json()
-    email = data.get('email')
-    otp = data.get('otp')
-
-    if verify_otp(email, otp):
-        user = User.query.filter_by(email=email).first()
-
-        # Log the login event in TransactionLog
-        transaction_log = TransactionLog(
-            event_type="user_login",
-            user_id=user.id,
-            description="User logged in",
-            metadata={"email": email}
-        )
-        db.session.add(transaction_log)
-        db.session.commit()
-
-        return {"message": "Login successful", "user_id": user.id}
-    return {"message": "Invalid OTP"}, 400
-
+api.add_resource(LoginUser, '/api/user/login')
 
 
 # Register API resources
 api.add_resource(CreateUser, '/api/user')
 api.add_resource(CreateGroup, '/api/group')
+
+# add user
+@app.route('/api/user', methods=['POST'])
+def add_user():
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    otp_secret = data.get('otp_secret')
+    wall_image_url = data.get('wall_image_url', "")
+    profile_image_url = data.get('profile_image_url', "")
+
+    user = User(username=username, email=email, otp_secret=otp_secret, wall_image_url=wall_image_url, profile_image_url=profile_image_url)
+    db.session.add(user)
+    db.session.commit()
+
+    return {"message": "User created", "user": user.to_dict()}, 201
+
 
 @app.route('/api/user/<int:user_id>', methods=['GET'])
 def get_user(user_id):
@@ -744,6 +831,7 @@ def get_user(user_id):
     if user:
         return jsonify(user.to_dict())
     return {"message": "User not found"}, 404
+
 
 # delete user
 @app.route('/api/user/<int:user_id>', methods=['DELETE'])
@@ -803,7 +891,6 @@ def list_involved_chats(user_id):
     
     return jsonify([chat.to_dict() for chat in chats])
 
-
 @app.route('/api/user/<int:user_id>/chats', methods=['POST'])
 def delete_user_chats(user_id):
     data = request.get_json()
@@ -811,20 +898,25 @@ def delete_user_chats(user_id):
     
     id_payload = data.get('selected_data')
 
-    delete_list = [select_item['chat_id'] for select_item  in id_payload]
+    # Use 'item_id' instead of 'chat_id'
+    delete_list = [select_item['item_id'] for select_item in id_payload]
 
     try:
         for id in delete_list:
-            print(f"attempting to delete contact with id : {id}")
+            print(f"attempting to delete chat with id : {id}")
             chat = Chat.query.filter_by(id=id).first()
-            print(f"fetched chat is {chat.id}")
-            db.session.delete(chat)
-            db.session.commit()
+            if chat:
+                print(f"fetched chat is {chat.id}")
+                db.session.delete(chat)
+                db.session.commit()
+            else:
+                print(f"No chat found with id: {id}")
         
-        return jsonify({"delete":True})
+        return jsonify({"delete": True})
         
     except Exception as e:
-        return jsonify({"delete":False, "error":f"{e}"})
+        print(f"Error deleting chats: {e}")
+        return jsonify({"delete": False, "error": f"{e}"})
 
 
 api.add_resource(CreateSingleAccount, '/api/wallet/single')
@@ -848,6 +940,7 @@ def list_user_contacts(user_id):
     return jsonify([contact.to_dict() for contact in contacts])
 
 
+
 @app.route('/api/user/<int:user_id>/contacts', methods=['POST'])
 def delete_user_contacts(user_id):
     data = request.get_json()
@@ -855,21 +948,25 @@ def delete_user_contacts(user_id):
     
     id_payload = data.get('selected_data')
 
-    delete_list = [select_item['contact_id'] for select_item  in id_payload]
+    # Use 'item_id' instead of 'contact_id'
+    delete_list = [select_item['item_id'] for select_item in id_payload]
 
     try:
         for id in delete_list:
             print(f"attempting to delete contact with id : {id}")
             contact = Contact.query.filter_by(id=id).first()
-            print(f"fetched contact is {contact.contact_email}")
-            db.session.delete(contact)
-            db.session.commit()
+            if contact:
+                print(f"fetched contact is {contact.contact_email}")
+                db.session.delete(contact)
+                db.session.commit()
+            else:
+                print(f"No contact found with id: {id}")
         
-        return jsonify({"delete":True})
+        return jsonify({"delete": True})
         
     except Exception as e:
-        return jsonify({"delete":False, "error":f"{e}"})
-
+        print(f"Error deleting contacts: {e}")
+        return jsonify({"delete": False, "error": f"{e}"})
 
 
 @app.route('/api/transactions/export', methods=['GET'])

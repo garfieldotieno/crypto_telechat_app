@@ -101,7 +101,6 @@ function verify_code(inputValue, next) {
     }, 1000); // Simulate async verification
 }
 
-
 // Validate contact name
 function validate_contact_name(inputValue, next) {
     console.log("Validating contact name...");
@@ -195,7 +194,6 @@ function add_contact(name, email, phone) {
         contact_digits: phone,
         adding_user_id: app_user_data.id,
         app_user : false,
-        app_user_id : 2,
     };
 
     console.log(`posting data should be : ${contactData}`)
@@ -220,7 +218,7 @@ function add_contact(name, email, phone) {
         })
         .then((data) => {
             console.log("Server response for added contact:", data);
-            alert("Contact added successfully!");
+            alert(`Contact added successfully!, with otp : ${data.otp_data}`);
             clear_contact_data(); // Clear the contact_page_data after successful addition'
             render_contact_listing('normal'); // Assuming this function renders the contact listing
         })
@@ -230,169 +228,199 @@ function add_contact(name, email, phone) {
         });
 }
 
-function process_select(){
-    let action =  'delete'
-    console.log("Processing select...");
-    let resource_selection = decodeData(localStorage.getItem('resource_selection_data'))
-    if (resource_selection){
-        if(action === "delete"){
-            delete_contact(resource_selection)
+
+// function process_select(){
+//     let action =  'delete'
+//     console.log("Processing select...");
+//     let resource_selection = decodeData(localStorage.getItem('resource_selection_data'))
+//     if (resource_selection){
+//         if(action === "delete"){
+//             delete_contact(resource_selection)
+//         }
+//     }
+// }
+
+
+function process_select() {
+    console.log('calling for process_select');
+    let data = decodeData(localStorage.getItem('resource_selection_data'));
+    if (data.selected_data != null) {
+        console.log('selected data is :', data);
+        if (data.processor != null) {
+            console.log('calling processor function :', data.processor);
+            if (data.processor === 'delete_contact') {
+                delete_contact(data.selected_data);
+            } else if (data.processor === 'delete_chat') {
+                delete_chat(data.selected_data);
+            } else if (data.processor === 'create_chat') {
+                create_chat(data.selected_data);
+            } else {
+                console.log('no processor function found');
+            }
         }
+    } else {
+        console.log('no data found for resource_selection_data');
     }
 }
 
 
-function delete_contact(data){
-    console.log('calling delete_contact',data)
+function delete_contact(data) {
+    console.log('calling delete_contact', data);
+
+    // Check if the data array is empty
+    if (!data || data.length === 0) {
+        alert("No contacts selected for deletion.");
+        return;
+    }
+
     clear_resource_selection_data();
-    calling_delete_user_id = decodeData(localStorage.getItem('userData')).id
+    const calling_delete_user_id = decodeData(localStorage.getItem('userData')).id;
+
     // Post the contact data to the server
     fetch(`api/user/${calling_delete_user_id}/contacts`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
-    }).then((response) => {
-        if (response.status === 200 ){
-            console.log("Contact deleted successfully.");
-            return response.json();
-        } else if (response.status === 400) {
-            throw new Error("Invalid contact data.");
-        } else {
-            throw new Error("Unexpected error occurred while deleting contact.");
-        }
+        body: JSON.stringify({selected_data:data}),
     })
-    .then((response_data) => {
-        console.log("Server response for deleted contact:", response_data);
-        render_contact_listing('normal')
-    })
-    .catch((error) => {
-        console.error("Error adding contact:", error.message);
-        alert("Failed to delete contact. Please try again.");
-    });
-
+        .then((response) => {
+            if (response.status === 200) {
+                console.log("Contact deleted successfully.");
+                return response.json();
+            } else if (response.status === 400) {
+                throw new Error("Invalid contact data.");
+            } else {
+                throw new Error("Unexpected error occurred while deleting contact.");
+            }
+        })
+        .then((response_data) => {
+            console.log("Server response for deleted contact:", response_data);
+            render_contact_listing('normal');
+        })
+        .catch((error) => {
+            console.error("Error deleting contact:", error.message);
+            alert("Failed to delete contact. Please try again.");
+        });
 }
 
 
-function process_chat_select(){
-    let action =  'delete'
-    console.log("Processing select...");
-    let resource_selection = decodeData(localStorage.getItem('resource_selection_data'))
-    if (resource_selection){
-        if(action === "delete"){
-            delete_chat(resource_selection)
-        }
-    }
-}
-
-function delete_chat(data){
+function delete_chat(data) {
     console.log('calling delete_chat', data);
 
+    // Check if the data array is empty
+    if (!data || data.length === 0) {
+        alert("No chats selected for deletion.");
+        return;
+    }
+
     clear_resource_selection_data();
-    calling_delete_user_id = decodeData(localStorage.getItem('userData')).id
-    // Post the contact data to the server
+    const calling_delete_user_id = decodeData(localStorage.getItem('userData')).id;
+
+    // Post the chat data to the server
     fetch(`api/user/${calling_delete_user_id}/chats`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
-    }).then((response) => {
-        if (response.status === 200 ){
-            console.log("Chat deleted successfully.");
-            return response.json();
-        } else if (response.status === 400) {
-            throw new Error("Invalid chaft data.");
-        } else {
-            throw new Error("Unexpected error occurred while deleting chat.");
-        }
+        body: JSON.stringify({selected_data:data}),
     })
-    .then((response_data) => {
-        console.log("Server response for deleted chat:", response_data);
-        render_contact_listing('normal')
-    })
-    .catch((error) => {
-        console.error("Error adding chat:", error.message);
-        alert("Failed to delete chat. Please try again.");
-    });
+        .then((response) => {
+            if (response.status === 200) {
+                console.log("Chat deleted successfully.");
+                return response.json();
+            } else if (response.status === 400) {
+                throw new Error("Invalid chat data.");
+            } else {
+                throw new Error("Unexpected error occurred while deleting chat.");
+            }
+        })
+        .then((response_data) => {
+            console.log("Server response for deleted chat:", response_data);
+            render_chat_listing('normal');
+        })
+        .catch((error) => {
+            console.error("Error deleting chat:", error.message);
+            alert("Failed to delete chat. Please try again.");
+        });
 }
 
 
-function process_chat_type(inputValue, next) {
-    console.log(`calling process_chat_type`, inputValue);
-    load_create_chat_data();
-    update_create_chat_data({ primary_input: [{ chat_type: inputValue }] });
+function create_chat(data){
+    console.log('calling create_chat')
 
-    if (inputValue === "single") {
-        console.log("Chat type is single. Skipping group name and showing contact list.");
-        render_dynamic_input_interface2("contact_list_select", "select_one");
-    } else if (inputValue === "group") {
-        console.log("Chat type is group. Showing group name input.");
-        render_dynamic_input_interface2("chat_group_name_input");
-    }
-
-    next();
-}
-
-
-function process_group_name(inputValue, next) {
-    console.log("calling process_group_name", inputValue);
-    update_create_chat_data({ primary_input: [{ chat_name: inputValue }] });
-
-    console.log("Group name entered. Showing contact list for multiple selection.");
-    render_dynamic_input_interface2("contact_list_select", "select_many");
-
-    next();
-}
-
-
-
-
-
-function submit_create_chat() {
-    console.log("Submitting create chat data...");
-
-    const createChatPageData = localStorage.getItem("create_chat_page_data");
-    if (!createChatPageData) {
-        console.error("No create_chat_page_data found in localStorage.");
+    // Check if the data array is empty
+    if (!data || data.length === 0) {
+        alert("No contacts selected for chat creation.");
         return;
     }
 
-    try {
-        const parsedData = JSON.parse(createChatPageData);
-
-        // Prepare the data for posting
-        const postData = {
-            primary_input: parsedData.primary_input,
-            selected_data: parsedData.selected_data,
-        };
-
-        console.log("Posting data:", postData);
-
-        // Post the data to the server
-        fetch("/api/create_chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(postData),
-        })
-            .then((response) => {
-                if (response.ok) {
-                    console.log("Chat created successfully.");
-                } else {
-                    console.error("Failed to create chat:", response.statusText);
-                }
-            })
-            .catch((error) => {
-                console.error("Error creating chat:", error);
-            });
-    } catch (error) {
-        console.error("Error parsing create_chat_page_data:", error);
+    // if == 1
+    if (data.length === 1){
+        process_create_single_chat(data);    
     }
+
+    // check if array length is greater than 1
+    if (data.length > 1) {
+        render_dynamic_input_interface('create_chat_group')
+        
+        return;
+    }
+
+    
 }
 
-function add_chat_member(){
-    console.log('calling add chat member')
+
+function process_create_single_chat(data) {
+    console.log(`calling process_create_single_chat with data:`, data);
+
+    // Retrieve the current user's data
+    const userData = decodeData(localStorage.getItem('userData'));
+    const user_id = userData.id;
+
+    // Extract the selected contact's item_id
+    const contact_id = data[0].item_id; // Assuming only one contact is selected for single chat
+
+    // Step 1: Create the single chat
+    fetch('/api/chat/single', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ creator_id: user_id }),
+    })
+        .then((response) => {
+            if (response.status === 201 || response.status === 200) {
+                return response.json(); // Chat created successfully
+            } else {
+                throw new Error('Failed to create single chat');
+            }
+        })
+        .then((chatData) => {
+            console.log('Single chat created successfully:', chatData);
+
+            // Step 2: Add the selected contact as a member of the chat
+            const chat_id = chatData.chat_id;
+
+            return fetch('/api/chat/member', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ chat_id: chat_id, user_id: contact_id }),
+            });
+        })
+        .then((response) => {
+            if (response.status === 201 || response.status === 200) {
+                console.log('Contact added to chat successfully.');
+                alert('Single chat created successfully!');
+                render_chat_listing('normal'); // Render the chat listing in normal mode
+            } else {
+                throw new Error('Failed to add contact to chat');
+            }
+        })
+        .catch((error) => {
+            console.error('Error processing single chat creation:', error.message);
+            alert('Failed to create single chat. Please try again.');
+        });
 }

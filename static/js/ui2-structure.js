@@ -33,15 +33,15 @@ const ui_structure = {
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-users", label: "Members", position: "right" }
         ],
         contact_page: [
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left", action:"render_contact_listing('select_many')" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left", action:"render_contact_listing('select_many', 'delete_contact')" },
             { visible: true, component_type: "text", label: "Contacts", position: "center" },
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-user-plus", label: "Add Contact", position: "right", action: "render_dynamic_input_interface('create_contact')" },
             { visible: true, component_type: 'item_search', placeholder: "Search"}
         ],
         chat_page: [
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left", action:"render_chat_listing('select_many')" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left", action:"render_chat_listing('select_many', 'delete_chat')" },
             { visible: true, component_type: "text", label: "Chat", position: "center" },
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Options", position: "right", action: "render_dynamic_input_interface('create_chat')" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Options", position: "right", action: "render_create_chat()" },
             { visible: true, component_type: 'item_search', placeholder: "Search"}
         ],
         select_chat_page:[
@@ -80,6 +80,7 @@ const ui_structure = {
             { visible: true, component_type: "personal_transaction_listing", transactions: [] },
             { visible: true, component_type: "group_transaction_listing", transactions: [] }
         ],
+        
         wallet_about_page: [
             { visible: true, component_type: "separation_title", label: "About" },
             { visible: true, component_type: "info_section", content: "This wallet allows you to manage your transactions securely within the chat app." }
@@ -91,13 +92,11 @@ const ui_structure = {
         other_profile_page: [
             { visible: true, component_type: "profile_image", img_src: "static/images/background_two.jpeg" },
             { visible: true, component_type: "profile_background_image", img_src: "static/images/aku.jpeg" },
-            { visible: true, component_type: "separation_title", label: "Information" },
-            { visible: true, component_type: "info_section", action: "show_profile_information()" },
-            { visible: true, component_type: "label_item", label: "Username", action: "copy_username()" },
-            { visible: true, component_type: "label_item", label: "Email", action: "copy_email()" },
-            { visible: true, component_type: "label_item", label: "Wallet", action: "copy_wallet()" },
-            { visible: true, component_type: "separation_title", label: "Groups" },
-            { visible: true, component_type: "resource_listing_interface", resource_type: "chats:groups", action: "list_common_groups()" }
+            
+        ],
+        group_profile: [
+            { visible: true, component_type: "profile_image", img_src: "static/images/background_two.jpeg" },
+            { visible: true, component_type: "profile_background_image", img_src: "static/images/aku.jpeg" },
         ],
         contact_page : [
             {
@@ -172,7 +171,7 @@ const ui_structure = {
         select_chat_page: [
             { visible: true, component_type: "button_stack", 
                 item_list: [
-                    { item_type: "button", item_label: "Proceed", action: "process_chat_select()" },
+                    { item_type: "button", item_label: "Proceed", action: "process_select()" },
                    
                 ] 
             }
@@ -183,6 +182,24 @@ const ui_structure = {
                     { item_type: "button", item_label: "Username", action: "copy_username()" },
                     { item_type: "button", item_label: "Email", action: "copy_email()" },
                     { item_type: "button", item_label: "Wallet", action: "copy_wallet()" }
+                    
+                ] 
+            }
+        ],
+        other_profile_page:[
+            { visible: true, component_type: "button_stack", 
+                item_list: [
+                    { item_type: "button", item_label: "Username", action: "copy_username()" },
+                    { item_type: "button", item_label: "Email", action: "copy_email()" },
+                    
+                ] 
+            }
+        ],
+        group_profile_page:[
+            { visible: true, component_type: "button_stack", 
+                item_list: [
+                    { item_type: "button", item_label: "Username", action: "copy_username()" },
+                    { item_type: "button", item_label: "Email", action: "copy_email()" },
                     
                 ] 
             }
@@ -238,14 +255,7 @@ const ui_structure = {
         ],
 
         create_chat: [
-            { 
-                visible: true, 
-                component_type: "input_select_field", 
-                placeholder: "Type", 
-                id: "chat_type_input", 
-                name: "chat_type", 
-                action: "process_chat_type" // Processor for this input
-            },
+
             {
                 visible: true,
                 component_type: "input_field",
@@ -253,12 +263,6 @@ const ui_structure = {
                 id: "chat_group_name_input",
                 name: "chat_type",
                 action: "process_group_name"
-            },
-            {
-                visible:true,
-                component_type: "contact_list_select",
-                action:"process_create_chat"
-                
             }
         ]
     },
@@ -266,18 +270,18 @@ const ui_structure = {
     // Function to dynamically update personal_profile_page
     update_personal_profile_data: async function () {
         console.log("Updating personal profile data...");
-
+    
         try {
             // Fetch user data from the backend
             const userData = await fetch_user_backend_data();
-
+    
             if (!userData) {
                 console.warn("No user data found.");
                 return;
             }
-
+    
             console.log("Fetched user data:", userData);
-
+    
             // Update the middle_section.personal_profile_page dynamically
             this.middle_section.personal_profile_page = [
                 { visible: true, component_type: "profile_image", img_src: userData.profile_image_url || "static/images/default_profile.png" },
@@ -285,24 +289,84 @@ const ui_structure = {
                 { visible: true, component_type: "separation_title", label: "Bio" },
                 { visible: true, component_type: "info_section", label: userData.registerd_bio },
                 { visible: true, component_type: "separation_title", label: "Actions" }
-                
             ];
-
+    
+            // Check if the user is logged in
+            const isLoggedIn = is_logged_in();
+    
+            // Update the bottom_section.personal_profile_page dynamically
             this.bottom_section.personal_profile_page = [
-                { visible: true, component_type: "button_stack", 
+                {
+                    visible: true,
+                    component_type: "button_stack",
                     item_list: [
                         { item_type: "button", item_label: `${userData.username}`, action: `copy_to_clipboard('${userData.username}')` },
                         { item_type: "button", item_label: `${userData.email}`, action: `copy_to_clipboard('${userData.email}')` },
-                        { item_type: "button", item_label: `${"Login"}`, action: `login_user` }
-                    ] 
+                        isLoggedIn
+                            ? { item_type: "button", item_label: "Wallet", action: "activate_wallet()" }
+                            : { item_type: "button", item_label: "Login", action: "login_user()" }
+                    ]
                 }
             ];
-
+    
             console.log("Updated personal_profile_page:", this.middle_section.personal_profile_page);
+            console.log("Updated bottom_section.personal_profile_page:", this.bottom_section.personal_profile_page);
         } catch (error) {
             console.error("Error updating personal profile data:", error);
         }
-    }
+    },
+
+    update_other_profile_data: async function (){
+        console.log("updating the other profile data")
+
+        try {
+            // Fetch user data from the backend
+            const userData = await fetch();
+    
+            if (!userData) {
+                console.warn("No user data found.");
+                return;
+            }
+    
+            console.log("Fetched user data:", userData);
+    
+            // Update the middle_section.personal_profile_page dynamically
+            this.middle_section.personal_profile_page = [
+                { visible: true, component_type: "profile_image", img_src: userData.profile_image_url || "static/images/default_profile.png" },
+                { visible: true, component_type: "profile_background_image", img_src: userData.wall_image_url || "static/images/default_background.png" },
+                { visible: true, component_type: "separation_title", label: "Bio" },
+                { visible: true, component_type: "info_section", label: userData.registerd_bio },
+                { visible: true, component_type: "separation_title", label: "Actions" }
+            ];
+    
+            // Check if the user is logged in
+            const isLoggedIn = is_logged_in();
+    
+            // Update the bottom_section.personal_profile_page dynamically
+            this.bottom_section.personal_profile_page = [
+                {
+                    visible: true,
+                    component_type: "button_stack",
+                    item_list: [
+                        { item_type: "button", item_label: `${userData.username}`, action: `copy_to_clipboard('${userData.username}')` },
+                        { item_type: "button", item_label: `${userData.email}`, action: `copy_to_clipboard('${userData.email}')` },
+                        isLoggedIn
+                            ? { item_type: "button", item_label: "Wallet", action: "activate_wallet()" }
+                            : { item_type: "button", item_label: "Login", action: "login_user()" }
+                    ]
+                }
+            ];
+    
+            console.log("Updated personal_profile_page:", this.middle_section.personal_profile_page);
+            console.log("Updated bottom_section.personal_profile_page:", this.bottom_section.personal_profile_page);
+        } catch (error) {
+            console.error("Error updating personal profile data:", error);
+        }
+    },
+
+    update_group_profile_data: async function (){
+        console.log("updating the group profile data")
+    }   
 };
 
 // window.ui_structure = ui_structure;

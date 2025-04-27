@@ -168,8 +168,7 @@ function create_middle_section(items) {
                                 `;
                                 
                                 listItemElement.setAttribute('data-chat-id', listItem.id)
-                                listItemElement.setAttribute("onclick", "render_chat_interface()");
-                                
+                                listItemElement.setAttribute("onclick", "render_chat_interface()"); 
                                 break;
                 
                             case "list_item_contact":
@@ -185,6 +184,20 @@ function create_middle_section(items) {
                                 // Append custom attribute data-contact-id
                                 listItemElement.setAttribute("data-contact-id", listItem.id);
                                 listItemElement.setAttribute("onclick", "render_other_profile_interface()");
+                                break;
+                            
+                            case "list_item_transaction":
+                                listItemElement.innerHTML = `
+                                    <div class="list_item_container">
+                                        <div class="list_item_image"></div>
+                                        <div class="list_item_content">
+                                            <div class="list_item_title">${listItem.label}</div>
+                                            <p class="list_item_message" style="color: ${listItem.status === 'online' ? '#037EE5' : '#666'};">${listItem.status}</p>
+                                        </div>
+                                    </div>
+                                `;
+                                listItemElement.setAttribute("data-transaction-id", listItem.id);
+                                listItemElement.setAttribute("onclick", "render_transaction_details()");
                                 break;
                 
                             default:
@@ -418,6 +431,7 @@ async function render_personal_profile() {
     }
 }
 
+
 function render_group_profile() {
     console.log("Rendering group profile page...");
 
@@ -462,10 +476,11 @@ function render_group_profile() {
 }
 
 
+
+
 function render_other_profile() {
     console.log("Rendering other profile page...");
     // Clear previous content
-
 }
 
 
@@ -484,6 +499,7 @@ function render_wallet_interface(){
     }
 }
 
+
 function render_wallet_start() {
     console.log("Rendering wallet start page...");
 }
@@ -492,6 +508,7 @@ function render_wallet_start() {
 function render_wallet_about() {
     console.log("Rendering wallet about page...");
 }
+
 
 function render_resource_listing_interface(resource_page) {
     console.log(`calling render_resource_listing_interface : ${resource_page}`);
@@ -505,8 +522,9 @@ function render_resource_listing_interface(resource_page) {
     }
 }
 
+
 // 🛠️ Function to Render Contact Listing
-function render_contact_listing(mode) {
+function render_contact_listing(mode, processor_name) {
     console.log(`calling render_contact_listing with mode: ${mode}`);
 
     // Clear previous content
@@ -548,7 +566,7 @@ function render_contact_listing(mode) {
         switch (mode) {
             case "select_one":
                 console.log("Mode: select_one - Enabling single selection.");
-                load_resource_selection_data()
+                load_resource_selection_data("contact", "select_one", processor_name)
                 document.querySelectorAll(".list_item_contact").forEach(item => {
                     item.classList.add("selectable");
                     item.onclick = () => handleSelectOne(item);
@@ -560,7 +578,7 @@ function render_contact_listing(mode) {
 
             case "select_many":
                 console.log("Mode: select_many - Enabling multiple selection.");
-                load_resource_selection_data()
+                load_resource_selection_data("contact", "select_many", processor_name)
                 document.querySelectorAll(".list_item_contact").forEach(item => {
                     item.classList.add("selectable");
                     item.onclick = () => handleSelectMany(item);
@@ -572,6 +590,7 @@ function render_contact_listing(mode) {
 
             case "normal":
                 console.log("Mode: normal - Rendering contact listing in normal mode.");
+                load_resource_selection_data("contact", "normal", process_select)
                 break;
 
             default:
@@ -618,19 +637,31 @@ function updateBottomSection(centerContainer, selectPageConfig) {
     }
 }
 
-
 function handleSelectOne(item) {
-    // Deselect any previously selected contact
-    document.querySelectorAll(".list_item_contact.selected").forEach(selectedItem => {
+    // Retrieve the resource value from resource_selection_data
+    const resourceSelectionData = JSON.parse(localStorage.getItem("resource_selection_data")) || {};
+    const resource = resourceSelectionData.resource;
+
+    // Determine the attribute to fetch based on the resource type
+    const itemId = resource === "contact"
+        ? item.getAttribute("data-contact-id")
+        : item.getAttribute("data-chat-id");
+
+    if (!itemId) {
+        console.warn("Item ID not found for the selected resource.");
+        return;
+    }
+
+    // Deselect any previously selected item
+    document.querySelectorAll(".list_item_contact.selected, .list_item_chat.selected").forEach(selectedItem => {
         selectedItem.classList.remove("selected");
         const checkIcon = selectedItem.querySelector(".fa-circle-check");
         if (checkIcon) checkIcon.remove(); // Remove the check icon
     });
 
-    // Select the clicked contact
+    // Select the clicked item
     item.classList.add("selected");
-    const contactId = item.getAttribute("data-contact-id");
-    console.log(`Selected contact: ${contactId}`);
+    console.log(`Selected item: ${itemId}`);
 
     // Add a check icon to the right side
     const checkIcon = document.createElement("i");
@@ -638,36 +669,51 @@ function handleSelectOne(item) {
     item.querySelector(".list_item_container").appendChild(checkIcon);
 
     // Update resource selection data
-    clear_resource_selection_data(); // Clear previous selection
-    update_resource_selection_data({ contact_id: contactId });
+    clear_resource_selection_data_single_select(); // Clear previous selection
+    update_resource_selection_data({ item_id: itemId });
 }
 
+function handleSelectMany(item) {
+    // Retrieve the resource value from resource_selection_data
+    const resourceSelectionData = JSON.parse(localStorage.getItem("resource_selection_data")) || {};
+    const resource = resourceSelectionData.resource;
 
-function handleChatSelectOne(item){
-    // Deselect any previously selected contact
-    document.querySelectorAll(".list_item_chat.selected").forEach(selectedItem => {
-        selectedItem.classList.remove("selected");
-        const checkIcon = selectedItem.querySelector(".fa-circle-check");
-        if (checkIcon) checkIcon.remove(); // Remove the check icon
-    });
+    // Determine the attribute to fetch based on the resource type
+    const itemId = resource === "contact"
+        ? item.getAttribute("data-contact-id")
+        : item.getAttribute("data-chat-id");
 
-    // Select the clicked contact
-    item.classList.add("selected");
-    const chatId = item.getAttribute("data-chat-id");
-    console.log(`Selected contact: ${chatId}`);
+    if (!itemId) {
+        console.warn("Item ID not found for the selected resource.");
+        return;
+    }
 
-    // Add a check icon to the right side
-    const checkIcon = document.createElement("i");
-    checkIcon.classList.add("fa", "fa-circle-check", "check_icon");
-    item.querySelector(".list_item_container").appendChild(checkIcon);
+    // Toggle the selected state of the clicked item
+    item.classList.toggle("selected");
+    console.log(`Toggled selection for item: ${itemId}`);
 
-    // Update resource selection data
-    clear_resource_selection_data(); // Clear previous selection
-    update_resource_selection_data({ chat_id: chatId });
+    if (item.classList.contains("selected")) {
+        // Add a check icon to the right side
+        const checkIcon = document.createElement("i");
+        checkIcon.classList.add("fa", "fa-circle-check", "check_icon");
+        item.querySelector(".list_item_container").appendChild(checkIcon);
+
+        // Update resource selection data
+        update_resource_selection_data({ item_id: itemId });
+    } else {
+        // Remove the check icon
+        const checkIcon = item.querySelector(".fa-circle-check");
+        if (checkIcon) checkIcon.remove();
+
+        // Remove the item ID from resource selection data
+        const resourceData = JSON.parse(localStorage.getItem("resource_selection_data")) || {};
+        resourceData.selected_data = resourceData.selected_data.filter(data => data.item_id !== itemId);
+        localStorage.setItem("resource_selection_data", JSON.stringify(resourceData));
+    }
 }
 
-function render_chat_listing(mode) {
-    console.log('calling render_chat_listing for mode : ', mode);
+function render_chat_listing(mode, processor_name) {
+    console.log(`calling render_chat_listing with mode: ${mode}`);
 
     // Clear previous content
     document.body.innerHTML = "";
@@ -708,91 +754,39 @@ function render_chat_listing(mode) {
         switch (mode) {
             case "select_one":
                 console.log("Mode: select_one - Enabling single selection.");
-                load_resource_selection_data()
+                load_resource_selection_data("chat", "select_one", processor_name);
                 document.querySelectorAll(".list_item_chat").forEach(item => {
                     item.classList.add("selectable");
-                    item.onclick = () => handleChatSelectOne(item);
+                    item.onclick = () => handleSelectOne(item); // Use handleSelectOne
                 });
                 updateTopSection(centerContainer, ui_structure.top_section.select_chat_page);
-                // Update bottom section to use select_page definition
                 updateBottomSection(centerContainer, ui_structure.bottom_section.select_chat_page);
                 break;
 
             case "select_many":
                 console.log("Mode: select_many - Enabling multiple selection.");
-                load_resource_selection_data()
+                load_resource_selection_data("chat", "select_many", processor_name);
                 document.querySelectorAll(".list_item_chat").forEach(item => {
                     item.classList.add("selectable");
-                    item.onclick = () => handleChatSelectMany(item);
+                    item.onclick = () => handleSelectMany(item); // Use handleSelectMany
                 });
                 updateTopSection(centerContainer, ui_structure.top_section.select_chat_page);
-                // Update bottom section to use select_page definition
                 updateBottomSection(centerContainer, ui_structure.bottom_section.select_chat_page);
                 break;
 
             case "normal":
                 console.log("Mode: normal - Rendering chat listing in normal mode.");
+                load_resource_selection_data("chat", "normal", process_select);
                 break;
 
             default:
                 console.warn(`Unknown mode: ${mode}`);
         }
     } else {
-        console.warn("No mode specified for render_contact_listing.");
+        console.warn("No mode specified for render_chat_listing.");
     }
 }
 
-function handleSelectMany(item) {
-    // Toggle the selected state of the clicked contact
-    item.classList.toggle("selected");
-    const contactId = item.getAttribute("data-contact-id");
-    console.log(`Toggled selection for contact: ${contactId}`);
-
-    if (item.classList.contains("selected")) {
-        // Add a check icon to the right side
-        const checkIcon = document.createElement("i");
-        checkIcon.classList.add("fa", "fa-circle-check", "check_icon");
-        item.querySelector(".list_item_container").appendChild(checkIcon);
-
-        // Update resource selection data
-        update_resource_selection_data({ contact_id: contactId });
-    } else {
-        // Remove the check icon
-        const checkIcon = item.querySelector(".fa-circle-check");
-        if (checkIcon) checkIcon.remove();
-
-        // Remove the contact ID from resource selection data
-        const resourceData = JSON.parse(localStorage.getItem("resource_selection_data")) || {};
-        resourceData.selected_data = resourceData.selected_data.filter(data => data.contact_id !== contactId);
-        localStorage.setItem("resource_selection_data", JSON.stringify(resourceData));
-    }
-}
-
-function handleChatSelectMany(item){
-    // Toggle the selected state of the clicked contact
-    item.classList.toggle("selected");
-    const chatId = item.getAttribute("data-chat-id");
-    console.log(`Toggled selection for chat: ${chatId}`);
-
-    if (item.classList.contains("selected")) {
-        // Add a check icon to the right side
-        const checkIcon = document.createElement("i");
-        checkIcon.classList.add("fa", "fa-circle-check", "check_icon");
-        item.querySelector(".list_item_container").appendChild(checkIcon);
-
-        // Update resource selection data
-        update_resource_selection_data({ chat_id: chatId });
-    } else {
-        // Remove the check icon
-        const checkIcon = item.querySelector(".fa-circle-check");
-        if (checkIcon) checkIcon.remove();
-
-        // Remove the contact ID from resource selection data
-        const resourceData = JSON.parse(localStorage.getItem("resource_selection_data")) || {};
-        resourceData.selected_data = resourceData.selected_data.filter(data => data.chat_id !== chatId);
-        localStorage.setItem("resource_selection_data", JSON.stringify(resourceData));
-    }
-}
 
 function render_dynamic_input_interface(input_page) {
     // Get the stack trace and extract the calling function two steps up
@@ -806,9 +800,13 @@ function render_dynamic_input_interface(input_page) {
     // Render specific input interfaces
     if (input_page === "create_contact") {
         render_create_contact();
-    } else if (input_page === "create_chat") {
-        render_create_chat(); // Handle single or group chat creation
-    } else if (input_page === "create_personal_account_transaction") {
+    } else if (input_page === "create_chat_single") {
+        render_new_chat_single(); // Handle single or group chat creation
+    } else if (input_page === "create_chat_group") {
+        render_new_chat_group(); // Handle single or group chat creation
+    }
+    
+    else if (input_page === "create_personal_account_transaction") {
         render_create_personal_transaction();
     } else if (input_page === "create_group_account_transaction") {
         render_create_group_transaction();
@@ -819,49 +817,7 @@ function render_dynamic_input_interface(input_page) {
     }
 }
 
-function render_dynamic_input_interface2(componentId, mode = null) {
-    console.log(`Rendering dynamic input interface for component: ${componentId}, mode: ${mode}`);
 
-    // Clear previous content
-    document.body.innerHTML = "";
-
-    // Fetch the component configuration from the UI structure
-    const componentConfig = ui_structure.create_section.create_chat.find(
-        (component) => component.id === componentId
-    );
-
-    if (!componentConfig) {
-        console.error(`Component with ID ${componentId} not found.`);
-        return;
-    }
-
-    // Render the component
-    if (componentConfig.component_type === "input_field") {
-        // Render input field
-        const inputField = document.createElement("input");
-        inputField.type = "text";
-        inputField.placeholder = componentConfig.placeholder;
-        inputField.id = componentConfig.id;
-        inputField.name = componentConfig.name;
-
-        const proceedButton = document.createElement("button");
-        proceedButton.textContent = "Proceed";
-        proceedButton.onclick = () => {
-            const inputValue = inputField.value;
-            if (componentConfig.action && typeof window[componentConfig.action] === "function") {
-                window[componentConfig.action](inputValue, () => {
-                    console.log("Proceeding to the next step...");
-                });
-            }
-        };
-
-        document.body.appendChild(inputField);
-        document.body.appendChild(proceedButton);
-    } else if (componentConfig.component_type === "contact_list_select") {
-        // Render contact list
-        render_contact_listing(mode);
-    }
-}
 
 function render_create_user() {
     console.log("Rendering create user interface...");
@@ -1004,6 +960,7 @@ function render_create_user() {
     }
 }
 
+
 function render_create_contact() {
     console.log("Rendering create contact interface...");
 
@@ -1129,13 +1086,18 @@ function render_create_contact() {
     }
 }
 
-function render_create_chat() {
-    console.log("Rendering create chat interface...");
+function render_create_chat(){
+    console.log('calling render_create_chat')
+    render_contact_listing('select_many', 'create_chat');
+}
+
+function render_new_chat_group() {
+    console.log("Rendering new chat group interface...");
 
     // Clear previous content
     document.body.innerHTML = "";
     document.body.classList.remove("start-screen");
-    document.body.classList.add("create-contact-screen");
+    document.body.classList.add("create-chat-group-screen");
 
     // Determine container classes based on screen size
     let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
@@ -1156,154 +1118,110 @@ function render_create_chat() {
         centerContainer.appendChild(create_top_section(createPageConfig));
     }
 
-    // Middle Section: Render one input at a time
+    // Middle Section: Render input for group name
     let middleSection = document.createElement("div");
     middleSection.classList.add("middle_section");
     centerContainer.appendChild(middleSection);
 
-    let createChatConfig = ui_structure.create_section.create_chat;
-    let currentInputIndex = 0;
+    let inputContainer = document.createElement("div");
+    inputContainer.classList.add("input_container");
 
-    function renderCurrentInput(){
-        console.log('calling renderCurrentInput');
-        middleSection.innerHTML = ""; // Clear previous input
-        let inputConfig = createChatConfig[currentInputIndex];
-        if (inputConfig && inputConfig.visible) {
-            if (inputConfig.component_type === "input_field") {
-                let inputContainer = document.createElement("div");
-                inputContainer.classList.add("input_container");
+    let inputField = document.createElement("input");
+    inputField.type = "text";
+    inputField.placeholder = "Enter group name";
+    inputField.id = "group_name";
+    inputField.name = "group_name";
+    inputField.classList.add("input_field");
 
-                let inputField = document.createElement("input");
-                inputField.type = "text";
-                inputField.placeholder = inputConfig.placeholder;
-                inputField.id = inputConfig.id;
-                inputField.name = inputConfig.name;
-                inputField.classList.add("input_field");
-
-                inputContainer.appendChild(inputField);
-                middleSection.appendChild(inputContainer);
-                inputField.focus();
-            } else if (inputConfig.component_type === "input_select_field"){
-                let inputContainer = document.createElement("div");
-                inputContainer.classList.add('input_container');
-
-                let inputSelectField = document.createElement('select');
-                inputSelectField.classList.add("input_field");
-
-                inputSelectField.innerHTML = `
-                    <option value="none"></option>
-                    <option value="single">Single</option>
-                    <option value="group">Group</option>
-                `
-
-                inputContainer.appendChild(inputSelectField);
-                middleSection.appendChild(inputContainer);
-                inputSelectField.focus();
-
-            } else if (inputConfig.component_type === "contact_list_select"){
-                // get value of select option then decide eith select_one, or select_many
-                data = decodeData(localStorage.getItem('create_chat_page_data'));
-                let chat_type = data.primary_input.chat_type
-                console.log(`fetched chat_type is : ${chat_type}`)
-                
-                if(chat_type === 'single'){
-                    render_contact_listing('select_one');
-                }
-                else if (chat_type === 'group'){
-                    render_contact_listing('select_many');
-                }
-                
-            }
-        }
-    }
-
-    renderCurrentInput();
+    inputContainer.appendChild(inputField);
+    middleSection.appendChild(inputContainer);
+    inputField.focus();
 
     // Bottom Section: Add "Proceed" button
     let bottomSectionConfig = ui_structure.bottom_section.create_page;
-    if(bottomSectionConfig && bottomSectionConfig.some(item => item.visible)){
+    if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
         let bottomSection = create_bottom_section(bottomSectionConfig);
         centerContainer.appendChild(bottomSection);
 
-        // Attach handler to proceed button
+        // Attach handler to the "Proceed" button
         let proceedButton = bottomSection.querySelector(".button_item");
         if (proceedButton) {
-            proceedButton.onclick = () =>{
-                console.log('proceed button clicked');
+            proceedButton.onclick = () => {
+                console.log('Proceed button clicked');
 
-                // Get the current input configuration
-                let inputConfig = createChatConfig[currentInputIndex];
-
-                // Retrieve the input field value using its ID
-                let inputValue = null;
-
-                if (inputConfig && inputConfig.component_type === "input_field") {
-                    let inputField = document.getElementById(inputConfig.id);
-                    if (inputField) {
-                        inputValue = inputField.value;
-                    } else {
-                        console.error(`Input field with ID "${inputConfig.id}" not found.`);
-                    }
-                } else if (inputConfig && inputConfig.component_type === "input_select_field"){
-                    let select = document.querySelector("select");
-                    inputValue = ""
-
-                    for (let option of Array.from(select.options)) {
-                        if (option.selected) {
-                        inputValue = String(option.value);
-                        }
-                    }
-                    
-                    
-                } else if (inputConfig && inputConfig.component_type === "contact_list_select"){
-                    
+                // Retrieve the group name from the input field
+                let groupName = document.getElementById("group_name").value;
+                if (!groupName) {
+                    alert("Please enter a group name.");
+                    return;
                 }
 
-                // Get the current processor function
-                let currentProcessor = inputConfig?.action;
+                // Retrieve the current user's data
+                const userData = decodeData(localStorage.getItem('userData'));
+                const user_id = userData.id;
 
-                if (currentProcessor && typeof window[currentProcessor] === "function") {
-                    console.log(`Executing processor: ${currentProcessor}`);
-                    // Pass the input value to the processor function
-                    window[currentProcessor](inputValue, () => {
-                        console.log('calling selected option value is :', inputValue);
-                        // Move to the next input after the processor completes
-                        currentInputIndex++;
-                        if (currentInputIndex < createChatConfig.length) {
-                            renderCurrentInput();
+                // Retrieve the selected contacts from resource_selection_data
+                const resourceSelectionData = decodeData(localStorage.getItem("resource_selection_data"));
+                const selectedContacts = resourceSelectionData.selected_data;
+
+                if (!selectedContacts || selectedContacts.length === 0) {
+                    alert("Please select at least one contact.");
+                    return;
+                }
+
+                // Step 1: Create the group chat
+                fetch('/api/chat/group', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ creator_id: user_id, name: groupName }),
+                })
+                    .then((response) => {
+                        if (response.status === 201 || response.status === 200) {
+                            return response.json(); // Group chat created successfully
                         } else {
-                            console.log("All inputs processed. Submitting...");
+                            throw new Error('Failed to create group chat');
                         }
+                    })
+                    .then((groupData) => {
+                        console.log('Group chat created successfully:', groupData);
+
+                        // Step 2: Add selected contacts as members of the group chat
+                        const chat_id = groupData.chat_id;
+
+                        const memberPromises = selectedContacts.map(contact => {
+                            return fetch('/api/chat/member', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ chat_id: chat_id, user_id: contact.item_id }),
+                            });
+                        });
+
+                        return Promise.all(memberPromises);
+                    })
+                    .then((responses) => {
+                        const allSuccessful = responses.every(response => response.status === 201 || response.status === 200);
+                        if (allSuccessful) {
+                            console.log('All members added to the group chat successfully.');
+                            alert('Group chat created successfully!');
+                            render_chat_listing('normal'); // Render the chat listing in normal mode
+                        } else {
+                            throw new Error('Failed to add some members to the group chat');
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error creating group chat:', error.message);
+                        alert('Failed to create group chat. Please try again.');
                     });
-                } else {
-                    console.warn("No processor found or processor is not a function. Moving to the next input.");
-                    // If no processor, move to the next input
-                    currentInputIndex++;
-                    if (currentInputIndex < createChatConfig.length) {
-                        renderCurrentInput();
-                    } else {
-                        console.log("All inputs processed. Submitting...");
-                    }
-                }
-
-
-            }   
+            };
         }
-
     }
 }
 
-function render_create_personal_transaction() {
-    console.log("Rendering create personal account transaction interface...");
-}
 
-function render_create_group_transaction() {
-    console.log("Rendering create group account transaction interface...");
-}
-
-function render_dynamic_chat_message_interface(single){
-    console.log(`calling render_dynamic_chat_message_interface of type : ${single}`);
-}
 
 
 

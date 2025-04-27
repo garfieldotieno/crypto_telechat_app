@@ -205,6 +205,16 @@ function fetch_user_data(){
     }
 }
 
+
+async function fetch_other_profile_data(user_id){
+    console.log(`Fetching other profile data from backend ${user_id}`);
+}
+
+async function fetch_group_profile_data(user_id){
+    console.log(`Fetching group profile data ${user_id}`);
+}
+
+
 async function fetch_user_backend_data() {
     console.log("Fetching user data from backend...");
 
@@ -284,10 +294,105 @@ function is_registerd(){
     }
 }
 
+// function is_logged_in() {
+//     console.log("Checking if user is logged in...");
+
+//     let registerData = localStorage.getItem('userData');
+//     if (!registerData) {
+//         console.warn("No register_data found in localStorage.");
+//         return false;
+//     }
+
+//     try {
+//         let parsedData = JSON.parse(registerData);
+
+//         // Check if the user has a valid last_login timestamp
+//         if (!parsedData.last_login) {
+//             console.warn("User is not logged in: last_login is missing.");
+//             return false;
+//         }
+
+//         // Parse the last_login timestamp as UTC
+//         const lastLoginTime = new Date(parsedData.last_login); // UTC timestamp from backend
+//         const currentTime = new Date(); // Current time in local timezone
+//         const timeDifference = currentTime - lastLoginTime; // Difference in milliseconds
+//         const fortyFiveMinutesInMilliseconds = 45 * 60 * 1000;
+
+//         if (timeDifference > fortyFiveMinutesInMilliseconds) {
+//             console.warn("User session has expired. Attempting to refresh session...");
+//             // Attempt to refresh session by calling login_user
+//             login_user();
+//             return false; // Return false for now, as the session is being refreshed
+//         }
+
+//         console.log("User is logged in.");
+//         return true;
+//     } catch (error) {
+//         console.error("Error parsing register_data:", error);
+//         return false;
+//     }
+// }
+
+function is_logged_in(){
+    loged_in_state = false
+    console.log(`checking login : ${loged_in_state}`)
+    return loged_in_state
+}
+
+
+async function login_user() {
+    console.log("Calling login_user...");
+
+    let registerData = localStorage.getItem('userData');
+    if (!registerData) {
+        console.warn("No register_data found in localStorage. Redirecting to registration...");
+        render_register_page();
+        return;
+    }
+
+    try {
+        let parsedData = JSON.parse(registerData);
+        const email = parsedData.email;
+        const otp = parsedData.otp_secret;
+
+        if (!email || !otp) {
+            console.warn("Email or OTP is missing in register_data. Cannot proceed with login.");
+            return;
+        }
+
+        const response = await fetch('/api/user/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, otp })
+        });
+
+        if (!response.ok) {
+            console.error("Login failed:", response.statusText);
+            alert("Login failed. Please check your credentials and try again.");
+            return;
+        }
+
+        const userData = await response.json();
+        console.log("Login successful. Fetched user data:", userData);
+
+        // Update localStorage with the fetched user data, including the updated last_login
+        localStorage.setItem('userData', encodeData(userData.user));
+        console.log("Updated register_data in localStorage:", userData.user);
+
+        // Redirect to the personal profile page or dashboard
+        render_personal_profile();
+    } catch (error) {
+        console.error("Error during login_user:", error);
+        alert("An error occurred during login. Please try again later.");
+    }
+}
+
+
 function get_user_wallet(){
     console.log('calling get_user_wallet for information');
 }
-
 
 function get_my_contacts() {
     console.log("Fetching contacts...");
@@ -346,19 +451,52 @@ const contact_page_data_template = {
 
 }
 
+
 const resource_selection_data_template = {
-    selected_data: []
+    selected_data: [],
+    select_type:"normal",
+    is_export:false,
+    processor:null,
+    resource:null
 }
 
-function load_resource_selection_data(resource_type) {
+
+function load_resource_selection_data(resource, select_type, processor) {
     console.log("calling load_resource_selection_data");
+
+
+    if(select_type === "select_many"){
+        console.log("processing current select :", select_type)
+        resource_selection_data_template.select_type = select_type
+        resource_selection_data_template.is_export = true;
+        resource_selection_data_template.processor = processor
+        resource_selection_data_template.resource = resource
+    }
+
+    else if (select_type === "select_one"){
+        console.log("processing current select :", select_type)
+        resource_selection_data_template.select_type = select_type
+        resource_selection_data_template.is_export = true;
+        resource_selection_data_template.processor = processor
+        resource_selection_data_template.resource = resource
+    }
+
+    else if (select_type === "normal"){
+        console.log("processing current select :", select_type)
+        resource_selection_data_template.select_type = select_type
+        resource_selection_data_template.is_export = false;
+        resource_selection_data_template.processor = null
+        resource_selection_data_template.resource = resource
+    }
 
     data = encodeData(resource_selection_data_template);
     localStorage.setItem('resource_selection_data', data);
     
-    console.log("Resource selection data loaded:", resource_selection_data_template);
+    console.log("Resource selection data loaded:", data);
+    
 }
- 
+
+
 
 function update_resource_selection_data(data) {
     console.log("calling update_resource_selection_data with data:", data);
@@ -384,6 +522,31 @@ function clear_resource_selection_data() {
     console.log("calling clear_resource_selection_data");
     localStorage.removeItem('resource_selection_data');
     console.log("Resource selection data cleared from localStorage");
+}
+
+function clear_resource_selection_data_single_select() {
+    console.log("calling clear_resource_selection_data_single_select");
+
+    // Retrieve the resource selection data from localStorage
+    let resourceSelectionData = localStorage.getItem('resource_selection_data');
+    if (!resourceSelectionData) {
+        console.warn("No resource_selection_data found in localStorage");
+        return;
+    }
+
+    try {
+        // Parse the data
+        let parsedData = JSON.parse(resourceSelectionData);
+
+        // Clear only the selected_data array
+        parsedData.selected_data = [];
+
+        // Save the updated data back to localStorage
+        localStorage.setItem('resource_selection_data', encodeData(parsedData));
+        console.log("Cleared selected_data in resource_selection_data:", parsedData);
+    } catch (error) {
+        console.error("Error parsing resource_selection_data:", error);
+    }
 }
 
 
@@ -526,29 +689,6 @@ function clear_create_chat_data(){
 }
 
 
-function load_profile_data(){
-
-}
-
-function clear_profile_data(){
-
-}
-
-function base_profile_data(){
-
-}
-
-personal_profile_page_data = {
-
-}
-
-other_profile_page_data = {
-
-}
-
-group_profile_page_data = {
-
-}
 
 
 
