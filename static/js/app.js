@@ -425,13 +425,40 @@ function get_my_contacts() {
         let contacts = JSON.parse(request.responseText);
         console.log("Fetched contacts:", contacts); // Log the fetched contacts
 
-        // Map API response to UI structure format
-        return contacts.map(contact => ({
-            item_type: "list_item_contact",
-            label: contact.contact_name,
-            id:contact.id,
-            status: "online" // Default status
-        }));
+        // Fetch user details for app_user_id and append as user_dict
+        contacts = contacts.map(contact => {
+            if (contact.app_user && contact.app_user_id) {
+                try {
+                    let userRequest = new XMLHttpRequest();
+                    userRequest.open("GET", `/api/user/${contact.app_user_id}`, false); // Sync request
+                    userRequest.send(null);
+
+                    if (userRequest.status === 200) {
+                        let user = JSON.parse(userRequest.responseText);
+                        contact.user_dict = user; // Append user object
+                    } else {
+                        console.warn(`Failed to fetch user for app_user_id: ${contact.app_user_id}`);
+                        contact.user_dict = null; // Set to null if user fetch fails
+                    }
+                } catch (error) {
+                    console.error(`Error fetching user for app_user_id: ${contact.app_user_id}`, error);
+                    contact.user_dict = null; // Set to null if an error occurs
+                }
+            } else {
+                contact.user_dict = null; // Set to null if app_user_id is not present
+            }
+
+            return {
+                item_type: "list_item_contact",
+                label: contact.contact_name,
+                id: contact.id,
+                status: "online", // Default status
+                user_dict: contact.user_dict // Append user_dict
+            };
+        });
+
+        console.log("Processed contacts with user_dict:", contacts);
+        return contacts;
 
     } catch (error) {
         console.error("Error fetching contacts:", error);
@@ -640,7 +667,7 @@ function get_my_chats() {
             item_type: "list_item_chat",
             label: chat.chat_type === "single" ? `Chat ${chat.id}` : `Group ${chat.id}`,
             last_message: "Tap to open chat", // Placeholder text
-            notification_badge: "", // No unread count in API response
+            notification_badge: 2, // No unread count in API response
             id:chat.id
         }));
 
@@ -649,7 +676,6 @@ function get_my_chats() {
         return [];
     }
 }
-
 
 const create_chat_data_template = {
     primary_input:[],
@@ -694,6 +720,6 @@ function clear_create_chat_data(){
 
 
 
- 
+
 
 

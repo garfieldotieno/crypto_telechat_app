@@ -51,20 +51,7 @@ class BaseModelMixin:
                 result[key] = value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
         return result
 
-class email_otps(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    otp = db.Column(db.String(6), nullable=False)
-    verified = db.Column(db.Boolean, nullable=False, default=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
-    def to_dict(self):
-        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
-        for key, value in result.items():
-            if isinstance(value, datetime):
-                result[key] = value.isoformat()
-        return result
 
 def fetch_all_email_otps():
     with app.app_context():
@@ -92,23 +79,6 @@ def verify_otp(email, otp):
             db.session.commit()
             return True
         return False
-    
-
-class User(db.Model, BaseModelMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    otp_secret = db.Column(db.String(16), nullable=False)
-    wall_image_url = db.Column(db.String(120), nullable=True)
-    profile_image_url = db.Column(db.String(120), nullable=True)
-    registerd_state = db.Column(db.Boolean(), nullable=False, default=True)
-    registerd_wallet = db.Column(db.Boolean(), nullable=True, default=False)
-    registerd_bio = db.Column(db.String(120), nullable=True, default="User Available")
-    created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    last_login = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
-
-    wallet_account = db.relationship('SingleWalletAccount', backref='user', lazy=True)
 
 
 class Contact (db.Model):
@@ -130,16 +100,68 @@ class Contact (db.Model):
         for key, value in result.items():
             if isinstance(value, datetime):
                 result[key] = value.isoformat()
+        return result 
+
+
+class email_otps(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    otp = db.Column(db.String(6), nullable=False)
+    verified = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    def to_dict(self):
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
         return result
     
+
+class User(db.Model, BaseModelMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    otp_secret = db.Column(db.String(16), nullable=False)
+    wall_image_url = db.Column(db.String(120), nullable=True)
+    profile_image_url = db.Column(db.String(120), nullable=True)
+    registerd_state = db.Column(db.Boolean(), nullable=False, default=True)
+    registerd_wallet = db.Column(db.Boolean(), nullable=True, default=False)
+    registerd_bio = db.Column(db.String(120), nullable=True, default="User Available")
+    wallet_address = db.Column(db.String(42), nullable=True)  # Ethereum wallet address
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    last_login = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
+
+    wallet_account = db.relationship('SingleWalletAccount', backref='user', lazy=True)
+
+    def wallet(self):
+        """Retrieve the wallet account associated with the user."""
+        return SingleWalletAccount.query.filter_by(user_id=self.id).first()
+
+
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     creator_id = db.Column(db.Integer, nullable=False)
     chat_id = db.Column(db.Integer, nullable=False)
     name = db.Column(db.String(80), unique=True, nullable=False)
-    
+
+    # New fields to standardize with User
+    email = db.Column(db.String(120), unique=True, nullable=True)
+    otp_secret = db.Column(db.String(16), nullable=True)
+    wall_image_url = db.Column(db.String(120), nullable=True)
+    profile_image_url = db.Column(db.String(120), nullable=True)
+    registerd_wallet = db.Column(db.Boolean(), nullable=True, default=False)
+    registerd_bio = db.Column(db.String(120), nullable=True, default="Group Available")
+    wallet_address = db.Column(db.String(42), nullable=True)  # Ethereum wallet address
+
     wallet_account = db.relationship('GroupWalletAccount', backref='group', lazy=True)
+
+    def wallet(self):
+        """Retrieve the wallet account associated with the group."""
+        return GroupWalletAccount.query.filter_by(group_id=self.id).first()
 
     def to_dict(self):
         result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -278,11 +300,13 @@ class CreateUser(Resource):
 
         print(f"checking fetched data from data : {username}, {email}, {otp_secret}, {wall_image_url}, {profile_image_url}")
         
+        # Step 1: Verify OTP
         otp_verified = verify_otp(email, otp_secret)
         print(f"calling for otp verification : {otp_verified}")
 
         if otp_verified:
             try:
+                # Step 2: Create the user
                 user = User(
                     username=username, 
                     email=email, 
@@ -293,6 +317,14 @@ class CreateUser(Resource):
                 db.session.add(user)
                 db.session.commit()
 
+                # Step 3: Update contacts with the same email
+                existing_contacts = Contact.query.filter_by(contact_email=email).all()
+                for contact in existing_contacts:
+                    contact.app_user = True
+                    contact.app_user_id = user.id
+                    db.session.commit()
+                    print(f"Updated contact {contact.id} to link with new user {user.id}")
+
                 return {
                     "message": "User created", 
                     "data": user.to_dict()
@@ -301,7 +333,7 @@ class CreateUser(Resource):
             except Exception as e:
                 db.session.rollback()
                 print(f"\nError creating user: {e}\n")
-                return {"message": "Error creating user"}, 500  # No jsonify()
+                return {"message": "Error creating user"}, 500
         else:
             return {"message": "Invalid OTP"}, 400
 
@@ -355,8 +387,25 @@ class CreateContact(Resource):
         app_user = data.get('app_user')
         app_user_id = 0
 
+        # Check if the contact_digits already exist
+        existing_contact_by_digits = Contact.query.filter_by(contact_digits=contact_digits).first()
+        if existing_contact_by_digits:
+            print(f"Contact with digits {contact_digits} already exists.")
+            return {
+                "message": "Contact with these digits already exists",
+                "existing_contact": existing_contact_by_digits.to_dict()
+            }, 400
+
+        # Check if the contact_email already exists
+        existing_contact_by_email = Contact.query.filter_by(contact_email=contact_email).first()
+        if existing_contact_by_email:
+            print(f"Contact with email {contact_email} already exists.")
+            return {
+                "message": "Contact with this email already exists",
+                "existing_contact": existing_contact_by_email.to_dict()
+            }, 400
+
         # Verify if the user is already an app user
-        
         existing_user = User.query.filter_by(email=contact_email).first()
         if existing_user:
             app_user = True
@@ -381,7 +430,7 @@ class CreateContact(Resource):
             return {
                 "message": "Contact created", 
                 "data": contact.to_dict(),
-                "otp_data":contact_otp
+                "otp_data": contact_otp
             }, 201  # No jsonify()
 
         except Exception as e:

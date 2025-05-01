@@ -174,7 +174,7 @@ function create_middle_section(items) {
                             case "list_item_contact":
                                 listItemElement.innerHTML = `
                                     <div class="list_item_container">
-                                        <div class="list_item_image"></div>
+                                        <div class="list_item_image" style="background-image: url('${listItem.user_dict?.wall_image_url || "static/images/default_profile.png"}');"></div>
                                         <div class="list_item_content">
                                             <div class="list_item_title">${listItem.label}</div>
                                             <p class="list_item_message" style="color: ${listItem.status === 'online' ? '#037EE5' : '#666'};">${listItem.status}</p>
