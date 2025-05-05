@@ -19,8 +19,6 @@ function create_top_section(items) {
     let right_content = document.createElement("div");
     right_content.classList.add("right_content");
 
-    let item_search = document.createElement('div');
-    item_search.classList.add('list_item_search')
 
     items.forEach(item => {
         if (item.visible) {
@@ -65,7 +63,7 @@ function create_top_section(items) {
     content_container.appendChild(right_content);
 
     section.appendChild(content_container);
-    section.appendChild(item_search)
+    
     
 
     return section;
@@ -75,12 +73,27 @@ function create_middle_section(items) {
     let section = document.createElement("div");
     section.classList.add("middle_section");
 
+    // Apply flexbox styles to ensure items float from the top and spread out
+    section.style.display = "flex";
+    section.style.flexDirection = "column";
+    section.style.alignItems = "center"; // Center items horizontally
+    section.style.justifyContent = "flex-start"; // Start items from the top
+    section.style.gap = "10px"; // Add spacing between items
+    section.style.padding = "10px"; // Add padding for better spacing
+
     items.forEach(item => {
         if (!item.visible) return; // Skip hidden elements
 
         let element = document.createElement("div");
 
         switch (item.component_type) {
+            case "item_search":
+                element.classList.add("search_container");
+                element.innerHTML = `
+                    <input type="text" placeholder="${item.placeholder}" class="search_input" oninput="${item.action}" />
+                `;
+                break;
+
             case "background_image":
                 element.classList.add("image_wrapper");
                 element.innerHTML = `<img src="${item.img_src}" class="background_image" />`;
@@ -130,83 +143,74 @@ function create_middle_section(items) {
                     <div class="resource_list" onclick="${item.action}">Loading ${item.resource_type}...</div>
                 `;
                 break;
-            
-                case "list_pad":
-                    element.classList.add("list_pad_container");
-                    
-                    if (item.component_owner == "contact_page"){
-                        item.item_list = get_my_contacts()
+
+            case "list_pad":
+                element.classList.add("list_pad_container");
+
+                if (item.component_owner === "contact_page") {
+                    item.item_list = get_my_contacts();
+                }
+
+                if (item.component_owner === "chat_page") {
+                    item.item_list = get_my_chats();
+                }
+
+                item.item_list.forEach(listItem => {
+                    let listItemElement = document.createElement("div");
+                    listItemElement.classList.add(listItem.item_type);
+
+                    switch (listItem.item_type) {
+                        case "list_item_chat":
+                            listItemElement.innerHTML = `
+                                <div class="list_item_container">
+                                    <div class="list_item_image"></div>
+                                    <div class="list_item_content">
+                                        <div class="list_item_title">${listItem.label}</div>
+                                        <p class="list_item_message">${listItem.last_message || listItem.balance}</p>
+                                    </div>
+                                    <div class="notification_badge">${listItem.notification_badge}</div>
+                                </div>
+                            `;
+                            listItemElement.setAttribute('data-chat-id', listItem.id);
+                            listItemElement.setAttribute("onclick", "render_chat_interface()");
+                            break;
+
+                        case "list_item_contact":
+                            listItemElement.innerHTML = `
+                                <div class="list_item_container">
+                                    <div class="list_item_image" style="background-image: url('${listItem.user_dict?.wall_image_url || "static/images/default_profile.png"}');"></div>
+                                    <div class="list_item_content">
+                                        <div class="list_item_title">${listItem.label}</div>
+                                        <p class="list_item_message" style="color: ${listItem.status === 'online' ? '#037EE5' : '#666'};">${listItem.status}</p>
+                                    </div>
+                                </div>
+                            `;
+                            listItemElement.setAttribute("data-contact-id", listItem.id);
+                            listItemElement.setAttribute("onclick", "render_other_profile_interface()");
+                            break;
+
+                        case "list_item_transaction":
+                            listItemElement.innerHTML = `
+                                <div class="list_item_container">
+                                    <div class="list_item_image"></div>
+                                    <div class="list_item_content">
+                                        <div class="list_item_title">${listItem.label}</div>
+                                        <p class="list_item_message" style="color: ${listItem.status === 'online' ? '#037EE5' : '#666'};">${listItem.status}</p>
+                                    </div>
+                                </div>
+                            `;
+                            listItemElement.setAttribute("data-transaction-id", listItem.id);
+                            listItemElement.setAttribute("onclick", "render_transaction_details()");
+                            break;
+
+                        default:
+                            console.warn(`Unknown list item type: ${listItem.item_type}`);
                     }
 
-                    if (item.component_owner == "chat_page"){
-                        item.item_list = get_my_chats()
-                    }
+                    element.appendChild(listItemElement);
+                });
+                break;
 
-                    item.item_list.forEach(listItem => {
-                        let listItemElement = document.createElement("div");
-                        listItemElement.classList.add(listItem.item_type);
-                
-                        switch (listItem.item_type) {
-                            case "list_item_search":
-                                listItemElement.innerHTML = `
-                                    <div class="search_container">
-                                        <input type="text" placeholder="${listItem.placeholder}" class="search_input" />
-                                    </div>
-                                `;
-                                break;
-                
-                            case "list_item_chat":
-                                listItemElement.innerHTML = `
-                                    <div class="list_item_container">
-                                        <div class="list_item_image"></div>
-                                        <div class="list_item_content">
-                                            <div class="list_item_title">${listItem.label}</div>
-                                            <p class="list_item_message">${listItem.last_message || listItem.balance}</p>
-                                        </div>
-                                        <div class="notification_badge">${listItem.notification_badge}</div>
-                                    </div>
-                                `;
-                                
-                                listItemElement.setAttribute('data-chat-id', listItem.id)
-                                listItemElement.setAttribute("onclick", "render_chat_interface()"); 
-                                break;
-                
-                            case "list_item_contact":
-                                listItemElement.innerHTML = `
-                                    <div class="list_item_container">
-                                        <div class="list_item_image" style="background-image: url('${listItem.user_dict?.wall_image_url || "static/images/default_profile.png"}');"></div>
-                                        <div class="list_item_content">
-                                            <div class="list_item_title">${listItem.label}</div>
-                                            <p class="list_item_message" style="color: ${listItem.status === 'online' ? '#037EE5' : '#666'};">${listItem.status}</p>
-                                        </div>
-                                    </div>
-                                `;
-                                // Append custom attribute data-contact-id
-                                listItemElement.setAttribute("data-contact-id", listItem.id);
-                                listItemElement.setAttribute("onclick", "render_other_profile_interface()");
-                                break;
-                            
-                            case "list_item_transaction":
-                                listItemElement.innerHTML = `
-                                    <div class="list_item_container">
-                                        <div class="list_item_image"></div>
-                                        <div class="list_item_content">
-                                            <div class="list_item_title">${listItem.label}</div>
-                                            <p class="list_item_message" style="color: ${listItem.status === 'online' ? '#037EE5' : '#666'};">${listItem.status}</p>
-                                        </div>
-                                    </div>
-                                `;
-                                listItemElement.setAttribute("data-transaction-id", listItem.id);
-                                listItemElement.setAttribute("onclick", "render_transaction_details()");
-                                break;
-                
-                            default:
-                                console.warn(`Unknown list item type: ${listItem.item_type}`);
-                        }
-                
-                        element.appendChild(listItemElement);
-                    });
-                    break;
             default:
                 console.warn(`Unknown component_type: ${item.component_type}`);
         }

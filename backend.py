@@ -892,6 +892,7 @@ def delete_user(user_id):
         return {"message": "User deleted"}
     return {"message": "User not found"}, 404
 
+
 # update user
 @app.route('/api/user/<int:user_id>', methods=['PUT'])
 def update_user(user_id):

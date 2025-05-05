@@ -294,49 +294,55 @@ function is_registerd(){
     }
 }
 
-// function is_logged_in() {
-//     console.log("Checking if user is logged in...");
+function is_logged_in() {
+    console.log("Checking if user is logged in...");
 
-//     let registerData = localStorage.getItem('userData');
-//     if (!registerData) {
-//         console.warn("No register_data found in localStorage.");
-//         return false;
-//     }
+    let registerData = localStorage.getItem('userData');
+    if (!registerData) {
+        console.warn("No register_data found in localStorage.");
+        return false;
+    }
 
-//     try {
-//         let parsedData = JSON.parse(registerData);
+    try {
+        let parsedData = JSON.parse(registerData);
 
-//         // Check if the user has a valid last_login timestamp
-//         if (!parsedData.last_login) {
-//             console.warn("User is not logged in: last_login is missing.");
-//             return false;
-//         }
+        // Check if the user has a valid last_login timestamp
+        if (!parsedData.last_login) {
+            console.warn("User is not logged in: last_login is missing.");
+            return false;
+        }
 
-//         // Parse the last_login timestamp as UTC
-//         const lastLoginTime = new Date(parsedData.last_login); // UTC timestamp from backend
-//         const currentTime = new Date(); // Current time in local timezone
-//         const timeDifference = currentTime - lastLoginTime; // Difference in milliseconds
-//         const fortyFiveMinutesInMilliseconds = 45 * 60 * 1000;
+        // Parse the last_login timestamp as UTC
+        const lastLoginTime = new Date(parsedData.last_login); // UTC timestamp from backend
+        const currentTime = new Date(); // Current time in local timezone
+        const timeDifference = currentTime - lastLoginTime; // Difference in milliseconds
+        const fortyFiveMinutesInMilliseconds = 45 * 60 * 1000;
 
-//         if (timeDifference > fortyFiveMinutesInMilliseconds) {
-//             console.warn("User session has expired. Attempting to refresh session...");
-//             // Attempt to refresh session by calling login_user
-//             login_user();
-//             return false; // Return false for now, as the session is being refreshed
-//         }
+        if (timeDifference > fortyFiveMinutesInMilliseconds) {
+            console.warn("User session has expired. Attempting to refresh session...");
 
-//         console.log("User is logged in.");
-//         return true;
-//     } catch (error) {
-//         console.error("Error parsing register_data:", error);
-//         return false;
-//     }
-// }
+            // Prevent repeated calls by setting a flag in localStorage
+            if (localStorage.getItem('isRefreshingSession')) {
+                console.warn("Session refresh already in progress. Skipping...");
+                return false;
+            }
 
-function is_logged_in(){
-    loged_in_state = false
-    console.log(`checking login : ${loged_in_state}`)
-    return loged_in_state
+            localStorage.setItem('isRefreshingSession', 'true'); // Set the flag
+
+            // Attempt to refresh session by calling login_user
+            login_user().finally(() => {
+                localStorage.removeItem('isRefreshingSession'); // Clear the flag after login attempt
+            });
+
+            return false; // Return false for now, as the session is being refreshed
+        }
+
+        console.log("User is logged in.");
+        return true;
+    } catch (error) {
+        console.error("Error parsing register_data:", error);
+        return false;
+    }
 }
 
 

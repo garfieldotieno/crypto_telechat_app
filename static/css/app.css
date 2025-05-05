@@ -43,6 +43,7 @@ html, body {
     width: 100%;
     height: 100%;
     flex: 1;
+    background-color: #232D3B;
 }
 
 /* Center container styles */
@@ -54,6 +55,7 @@ html, body {
     max-width: 100%;
     max-height: 100%;
     overflow: hidden; /* No scrolling in the container */
+    background-color: #232D3B;
 }
 
 /* App center container for small screens */
@@ -71,8 +73,8 @@ html, body {
     flex: 0 0 auto;
     padding: 15px 0;
     z-index: 10;
-    background-color: #FFFFFF;
-    color: #037EE5;
+    color: #A1B6C3;
+    background-color: #17212B;
 }
 
 /* Middle section - takes available space */
@@ -82,7 +84,7 @@ html, body {
     flex-direction: column;
     overflow: auto; /* Allow scrolling only in content if needed */
     position: relative;
-    background-color: #0E4D68;
+    background-color: #17212B;
 }
 
 
@@ -91,7 +93,10 @@ html, body {
 .start-screen .middle_section {
     overflow: hidden; /* No scrolling on start screen */
     justify-content: center; /* Center vertically */
+    background-color: #232D3B;
 }
+
+
 
 /* Image wrapper in middle section */
 .middle_section .image_wrapper {
@@ -111,6 +116,7 @@ html, body {
 
 /* Input Field Styling */
 .input_container {
+    background-color: #17212B;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -155,7 +161,7 @@ html, body {
     padding: 15px 0;
     z-index: 10;
     margin-bottom: env(safe-area-inset-bottom, 0); /* iOS safe area support */
-    background-color: #FFFFFF;
+    background-color: #17212B;
 }
 
 /* Button stack container */
@@ -172,8 +178,8 @@ html, body {
     width: 100%;
     padding: 12px;
     border-radius: 0px;
-    background-color: #037EE5;
-    color: white;
+    background-color: #232D3B;
+    color: #A1B6C3;
     font-weight: bold;
     font-size: 16px;
     border: none;
@@ -187,6 +193,7 @@ html, body {
     justify-content: space-between;
     align-items: center;
     padding: 0 15px;
+    background-color: #17212B
 }
 
 /* Left, center and right content */
@@ -232,12 +239,12 @@ html, body {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    background-color: #ffffff;
-    color: #037EE5;
+    background-color: #17212B;
+    color: #A1B6C3;
     padding: 10px 0;
    
     min-width: 375px;
-    border-top: 1px solid #ccc;
+    
     
     /* z-index: 1; */
 }
@@ -304,8 +311,8 @@ html, body {
 
 /* Separation Title Styling */
 .separation_title {
-    background-color: #037EE5;
-    color: #FFFFFF;
+    background-color: #232D3B;
+    color: #A1B6C3;
     text-align: center;
     padding: 10px;
     margin: 10px 0;
@@ -315,8 +322,8 @@ html, body {
 
 /* Info Section Styling */
 .info_section {
-    background-color: #0E4D68;
-    color: #FFFFFF;
+    background-color: #17212B;
+    color: #A1B6C3;
     text-align: center;
     padding: 15px;
     margin: 10px 0;
@@ -374,7 +381,7 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #ffffff;
+    background-color: #232D3B;
     color: black;
     padding: 0px;
     margin-bottom: 10px;
@@ -389,22 +396,25 @@ html, body {
     align-items: center;
     width: 100%;
     padding: 10px;
+    background-color: #17212B
 }
 
 .search_input {
     width: 80%;
     padding: 10px;
     font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    border: 1px solid #00acc1;
+    border-radius: 20px;
     text-align: center;
+    background-color: #232D3B
 }
 
 /* List Item Wallet and Chat */
 .list_item_wallet, .list_item_chat, .list_item_contact {
     display: flex;
     align-items: center;
-    background-color: #ffffff;
+    background-color: #232D3B;
+    border-bottom: 1px solid #17212B;
     color: black;
     padding: 10px;
     margin-bottom: 2.5px;
@@ -414,11 +424,11 @@ html, body {
 
 
 .list_item_contact:hover {
-    background-color: #f0f0f0;
+    background-color: #3C5E72;
 }
 
 .list_item_contact.selectable.selected {
-    background-color: #e0f7fa; /* Highlight selected contact */
+    background-color: #232D3B; /* Highlight selected contact */
     border: 1px solid #00acc1;
 }
 
@@ -434,7 +444,7 @@ html, body {
     display: flex;
     align-items: center;
     padding: 10px;
-    border-bottom: 1px solid #ccc;
+    
 }
 
 .list_item_image {
@@ -454,7 +464,7 @@ html, body {
 
 .list_item_title {
     font-weight: bold;
-    color: #333;
+    color: #A1B6C3;
 }
 
 .list_item_message {
@@ -463,7 +473,7 @@ html, body {
 }
 
 .notification_badge {
-    background-color: #037EE5;
+    background-color: #17212B;
     color: white;
     padding: 5px 10px;
     border-radius: 20px;

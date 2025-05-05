@@ -35,14 +35,13 @@ const ui_structure = {
         contact_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left", action:"render_contact_listing('select_many', 'delete_contact')" },
             { visible: true, component_type: "text", label: "Contacts", position: "center" },
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-user-plus", label: "Add Contact", position: "right", action: "render_dynamic_input_interface('create_contact')" },
-            { visible: true, component_type: 'item_search', placeholder: "Search"}
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-user-plus", label: "Add Contact", position: "right", action: "render_dynamic_input_interface('create_contact')" }
         ],
         chat_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left", action:"render_chat_listing('select_many', 'delete_chat')" },
             { visible: true, component_type: "text", label: "Chat", position: "center" },
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-plus", label: "Options", position: "right", action: "render_create_chat()" },
-            { visible: true, component_type: 'item_search', placeholder: "Search"}
+            
         ],
         select_chat_page:[
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_chat_listing('normal')"},
@@ -98,7 +97,13 @@ const ui_structure = {
             { visible: true, component_type: "profile_image", img_src: "static/images/background_two.jpeg" },
             { visible: true, component_type: "profile_background_image", img_src: "static/images/aku.jpeg" },
         ],
-        contact_page : [
+        contact_page: [
+            {
+                visible: true,
+                component_type: "item_search",
+                placeholder: "Search Contacts",
+                action: "search_contacts()" // Add a valid search function
+            },
             {
                 visible: true,
                 component_type: "list_pad",
@@ -106,7 +111,13 @@ const ui_structure = {
                 item_list: []
             }
         ],
-        chat_page : [
+        chat_page: [
+            {
+                visible: true,
+                component_type: "item_search",
+                placeholder: "Search Chats",
+                action: "search_chats()" // Add a valid search function
+            },
             {
                 visible: true,
                 component_type: "list_pad",
@@ -114,7 +125,6 @@ const ui_structure = {
                 item_list: []
             }
         ]
-        
     },
     
     bottom_section: {
