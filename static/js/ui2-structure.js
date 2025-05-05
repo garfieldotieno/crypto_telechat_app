@@ -191,7 +191,8 @@ const ui_structure = {
                 item_list: [
                     { item_type: "button", item_label: "Username", action: "copy_username()" },
                     { item_type: "button", item_label: "Email", action: "copy_email()" },
-                    { item_type: "button", item_label: "Wallet", action: "copy_wallet()" }
+                    { item_type: "button", item_label: "Wallet", action: "copy_wallet()" },
+                    { item_type: "button", item_label: "Uninstall App", action: "uninstall_app()" } // Add uninstall button
                     
                 ] 
             }
@@ -314,7 +315,8 @@ const ui_structure = {
                         { item_type: "button", item_label: `${userData.email}`, action: `copy_to_clipboard('${userData.email}')` },
                         isLoggedIn
                             ? { item_type: "button", item_label: "Wallet", action: "activate_wallet()" }
-                            : { item_type: "button", item_label: "Login", action: "login_user()" }
+                            : { item_type: "button", item_label: "Login", action: "login_user()" },
+                        { item_type: "button", item_label: "Uninstall App", action: "uninstall_app()" } // Add Uninstall App button
                     ]
                 }
             ];

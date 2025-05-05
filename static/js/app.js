@@ -294,105 +294,162 @@ function is_registerd(){
     }
 }
 
-function is_logged_in() {
-    console.log("Checking if user is logged in...");
+// function is_logged_in() {
+//     console.log("Checking if user is logged in...");
 
-    let registerData = localStorage.getItem('userData');
-    if (!registerData) {
-        console.warn("No register_data found in localStorage.");
-        return false;
-    }
+//     let registerData = localStorage.getItem('userData');
+//     if (!registerData) {
+//         console.warn("No register_data found in localStorage.");
+//         return false;
+//     }
 
-    try {
-        let parsedData = JSON.parse(registerData);
+//     try {
+//         let parsedData = JSON.parse(registerData);
 
-        // Check if the user has a valid last_login timestamp
-        if (!parsedData.last_login) {
-            console.warn("User is not logged in: last_login is missing.");
-            return false;
-        }
+//         // Check if the user has a valid last_login timestamp
+//         if (!parsedData.last_login) {
+//             console.warn("User is not logged in: last_login is missing.");
+//             return false;
+//         }
 
-        // Parse the last_login timestamp as UTC
-        const lastLoginTime = new Date(parsedData.last_login); // UTC timestamp from backend
-        const currentTime = new Date(); // Current time in local timezone
-        const timeDifference = currentTime - lastLoginTime; // Difference in milliseconds
-        const fortyFiveMinutesInMilliseconds = 45 * 60 * 1000;
+//         // Parse the last_login timestamp as UTC
+//         const lastLoginTime = new Date(parsedData.last_login); // UTC timestamp from backend
+//         const currentTime = new Date(); // Current time in local timezone
+//         const timeDifference = currentTime - lastLoginTime; // Difference in milliseconds
+//         const fortyFiveMinutesInMilliseconds = 45 * 60 * 1000;
 
-        if (timeDifference > fortyFiveMinutesInMilliseconds) {
-            console.warn("User session has expired. Attempting to refresh session...");
+//         if (timeDifference > fortyFiveMinutesInMilliseconds) {
+//             console.warn("User session has expired. Attempting to refresh session...");
 
-            // Prevent repeated calls by setting a flag in localStorage
-            if (localStorage.getItem('isRefreshingSession')) {
-                console.warn("Session refresh already in progress. Skipping...");
-                return false;
-            }
+//             // Prevent repeated calls by setting a flag in localStorage
+//             if (localStorage.getItem('isRefreshingSession')) {
+//                 console.warn("Session refresh already in progress. Skipping...");
+//                 return false;
+//             }
 
-            localStorage.setItem('isRefreshingSession', 'true'); // Set the flag
+//             localStorage.setItem('isRefreshingSession', 'true'); // Set the flag
 
-            // Attempt to refresh session by calling login_user
-            login_user().finally(() => {
-                localStorage.removeItem('isRefreshingSession'); // Clear the flag after login attempt
-            });
+//             // Attempt to refresh session by calling login_user
+//             login_user().finally(() => {
+//                 localStorage.removeItem('isRefreshingSession'); // Clear the flag after login attempt
+//             });
 
-            return false; // Return false for now, as the session is being refreshed
-        }
+//             return false; // Return false for now, as the session is being refreshed
+//         }
 
-        console.log("User is logged in.");
-        return true;
-    } catch (error) {
-        console.error("Error parsing register_data:", error);
-        return false;
-    }
+//         console.log("User is logged in.");
+//         return true;
+//     } catch (error) {
+//         console.error("Error parsing register_data:", error);
+//         return false;
+//     }
+// }
+
+
+// async function login_user() {
+//     console.log("Calling login_user...");
+
+//     let registerData = localStorage.getItem('userData');
+//     if (!registerData) {
+//         console.warn("No register_data found in localStorage. Redirecting to registration...");
+//         render_register_page();
+//         return;
+//     }
+
+//     try {
+//         let parsedData = JSON.parse(registerData);
+//         const email = parsedData.email;
+//         const otp = parsedData.otp_secret;
+
+//         if (!email || !otp) {
+//             console.warn("Email or OTP is missing in register_data. Cannot proceed with login.");
+//             return;
+//         }
+
+//         const response = await fetch('/api/user/login', {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json'
+//             },
+//             body: JSON.stringify({ email, otp })
+//         });
+
+//         if (!response.ok) {
+//             console.error("Login failed:", response.statusText);
+//             alert("Login failed. Please check your credentials and try again.");
+//             return;
+//         }
+
+//         const userData = await response.json();
+//         console.log("Login successful. Fetched user data:", userData);
+
+//         // Update localStorage with the fetched user data, including the updated last_login
+//         localStorage.setItem('userData', encodeData(userData.user));
+//         console.log("Updated register_data in localStorage:", userData.user);
+
+//         // Redirect to the personal profile page or dashboard
+//         render_personal_profile();
+//     } catch (error) {
+//         console.error("Error during login_user:", error);
+//         alert("An error occurred during login. Please try again later.");
+//     }
+// }
+
+function is_logged_in(){
+    console.log('calling is_logged_in')
 }
 
+function login_user(){
+    console.log('calling login_user')
+}
 
-async function login_user() {
-    console.log("Calling login_user...");
+function uninstall_app() {
+    console.log("Uninstalling the app...");
 
-    let registerData = localStorage.getItem('userData');
-    if (!registerData) {
-        console.warn("No register_data found in localStorage. Redirecting to registration...");
-        render_register_page();
-        return;
-    }
-
-    try {
-        let parsedData = JSON.parse(registerData);
-        const email = parsedData.email;
-        const otp = parsedData.otp_secret;
-
-        if (!email || !otp) {
-            console.warn("Email or OTP is missing in register_data. Cannot proceed with login.");
-            return;
-        }
-
-        const response = await fetch('/api/user/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, otp })
+    // Unregister the service worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            registrations.forEach(registration => {
+                registration.unregister().then(success => {
+                    if (success) {
+                        console.log("Service worker unregistered successfully.");
+                    } else {
+                        console.warn("Failed to unregister service worker.");
+                    }
+                });
+            });
         });
-
-        if (!response.ok) {
-            console.error("Login failed:", response.statusText);
-            alert("Login failed. Please check your credentials and try again.");
-            return;
-        }
-
-        const userData = await response.json();
-        console.log("Login successful. Fetched user data:", userData);
-
-        // Update localStorage with the fetched user data, including the updated last_login
-        localStorage.setItem('userData', encodeData(userData.user));
-        console.log("Updated register_data in localStorage:", userData.user);
-
-        // Redirect to the personal profile page or dashboard
-        render_personal_profile();
-    } catch (error) {
-        console.error("Error during login_user:", error);
-        alert("An error occurred during login. Please try again later.");
     }
+
+    // Clear caches
+    if ('caches' in window) {
+        caches.keys().then(cacheNames => {
+            cacheNames.forEach(cacheName => {
+                caches.delete(cacheName).then(success => {
+                    if (success) {
+                        console.log(`Cache ${cacheName} deleted successfully.`);
+                    } else {
+                        console.warn(`Failed to delete cache ${cacheName}.`);
+                    }
+                });
+            });
+        });
+    }
+
+    // Clear localStorage
+    localStorage.clear();
+    console.log("Local storage cleared.");
+
+    // Provide instructions to the user
+    alert(
+        "The app has been uninstalled successfully.\n\n" +
+        "To completely remove the app from your device:\n" +
+        "1. On your desktop, right-click the app icon and select 'Uninstall'.\n" +
+        "2. On your mobile device, long-press the app icon and select 'Uninstall'."
+    );
+
+    // Optionally reload the page to reflect changes
+    location.reload(); // Reload the page to reflect changes
 }
 
 

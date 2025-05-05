@@ -107,3 +107,4 @@ function addPWAInstallButtonToScreen(container) {
     
     return installBtn;
 }
+
