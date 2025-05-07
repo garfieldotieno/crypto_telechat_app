@@ -168,16 +168,16 @@ html, body {
 .button_stack {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch; /* Ensure buttons stretch to full width */
     gap: 10px;
-    padding: 0 20px;
+    width: 100%; /* Occupy full width of the parent container */
+    padding: 0; /* Remove padding to align with the container */
 }
 
 /* Button styling */
 .button_item {
-    width: 100%;
+    width: 100%; /* Ensure button occupies full width of the button_stack */
     padding: 12px;
-    border-radius: 0px;
     background-color: #232D3B;
     color: #A1B6C3;
     font-weight: bold;
@@ -185,6 +185,7 @@ html, body {
     border: none;
     cursor: pointer;
     text-align: center;
+    box-sizing: border-box; /* Include padding and border in width calculation */
 }
 
 /* Content container in top section */

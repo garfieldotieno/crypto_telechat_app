@@ -46,8 +46,7 @@ const ui_structure = {
         select_chat_page:[
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_chat_listing('normal')"},
             { visible: true, component_type: "text", label: "Select Chat", position: "center" },
-            { visible: false, component_type: "icon_label", icon: "fa-solid fa-edit", label: "Edit", position: "right" },
-            { visible: true, component_type: 'item_search', placeholder: "Search"}
+            { visible: false, component_type: "icon_label", icon: "fa-solid fa-edit", label: "Edit", position: "right" }  
         ],
         create_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_start()" },
@@ -57,8 +56,7 @@ const ui_structure = {
         select_contact_page:[
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_contact_listing('normal')"},
             { visible: true, component_type: "text", label: "Select Contact", position: "center" },
-            { visible: false, component_type: "icon_label", icon: "fa-solid fa-edit", label: "Edit", position: "right" },
-            { visible: true, component_type: 'item_search', placeholder: "Search"}
+            { visible: false, component_type: "icon_label", icon: "fa-solid fa-edit", label: "Edit", position: "right" }
         ],
         chat_message_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
@@ -71,6 +69,7 @@ const ui_structure = {
         start_page: [
             { visible: true, component_type: "background_image", img_src: "static/images/SplashScreen.png" }
         ],
+
         wallet_start_page: [
             { visible: true, component_type: "profile_image", img_src: "static/images/samurai.png" },
             { visible: true, component_type: "profile_background_image", img_src: "static/images/background_one.jpeg" },
@@ -84,10 +83,12 @@ const ui_structure = {
             { visible: true, component_type: "separation_title", label: "About" },
             { visible: true, component_type: "info_section", content: "This wallet allows you to manage your transactions securely within the chat app." }
         ],
+
         personal_profile_page: [
             { visible: true, component_type: "profile_image", img_src: "static/images/background_one.jpeg" },
             { visible: true, component_type: "profile_background_image", img_src: "static/images/samurai.jpeg" },
         ],
+        
         other_profile_page: [
             { visible: true, component_type: "profile_image", img_src: "static/images/background_two.jpeg" },
             { visible: true, component_type: "profile_background_image", img_src: "static/images/aku.jpeg" },
@@ -97,6 +98,7 @@ const ui_structure = {
             { visible: true, component_type: "profile_image", img_src: "static/images/background_two.jpeg" },
             { visible: true, component_type: "profile_background_image", img_src: "static/images/aku.jpeg" },
         ],
+
         contact_page: [
             {
                 visible: true,
@@ -111,6 +113,7 @@ const ui_structure = {
                 item_list: []
             }
         ],
+
         chat_page: [
             {
                 visible: true,
@@ -378,7 +381,11 @@ const ui_structure = {
 
     update_group_profile_data: async function (){
         console.log("updating the group profile data")
-    }   
+    },
+    
+    update_other_profile_data: async function (){
+        console.log("updating the other profile data")
+    }
 };
 
 // window.ui_structure = ui_structure;

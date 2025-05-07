@@ -42,13 +42,16 @@ migrate = Migrate(app, db)
 # enabe CORS on all routes
 CORS(app)
 
+
 class BaseModelMixin:
     def to_dict(self):
         result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
         for key, value in result.items():
             if isinstance(value, datetime):
-                # Ensure the datetime is in UTC and serialize it in ISO 8601 format
-                result[key] = value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+                # Convert UTC to local time (East Africa Time in this case)
+                local_tz = pytz.timezone("Africa/Nairobi")
+                local_time = value.replace(tzinfo=timezone.utc).astimezone(local_tz)
+                result[key] = local_time.isoformat()
         return result
 
 
@@ -80,28 +83,16 @@ def verify_otp(email, otp):
             return True
         return False
 
-
-class Contact (db.Model):
+class Contact(db.Model, BaseModelMixin):
     id = db.Column(db.Integer, primary_key=True)
     adding_user_id = db.Column(db.Integer, nullable=False)
-
     contact_digits = db.Column(db.String(13), nullable=True)
     contact_name = db.Column(db.String(80), nullable=False)
     contact_email = db.Column(db.String(120), nullable=False)
-
     app_user = db.Column(db.Boolean, nullable=False, default=True)
     app_user_id = db.Column(db.Integer, nullable=True, default=0)
-
-    created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-    updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    
-    def to_dict(self):
-        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
-        for key, value in result.items():
-            if isinstance(value, datetime):
-                result[key] = value.isoformat()
-        return result 
-
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.utcnow())
+    updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.utcnow(), onupdate=datetime.utcnow)
 
 class email_otps(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -350,7 +341,7 @@ class LoginUser(Resource):
             user = User.query.filter_by(email=email).first()
 
             if user:
-                # Update the last_login field
+                # Update the last_login field to UTC
                 user.last_login = datetime.utcnow()
                 db.session.commit()
 
@@ -366,14 +357,14 @@ class LoginUser(Resource):
 
                 return {
                     "message": "Login successful",
-                    "user": user.to_dict()
+                    "user": user.to_dict()  # Converts UTC to local time
                 }, 200
             else:
                 return {"message": "User not found"}, 404
         else:
             return {"message": "Invalid OTP"}, 400
+     
         
-
 class CreateContact(Resource):
     def post(self):
         data = request.get_json()
@@ -519,6 +510,7 @@ class CreateGroupChat(Resource):
             db.session.rollback()
             print(f"\nError creating group chat: {e}\n")
             return {"message": "Error creating group chat"}, 500
+
 
 class AddChatMember(Resource):
     def post(self):

@@ -294,114 +294,112 @@ function is_registerd(){
     }
 }
 
-// function is_logged_in() {
-//     console.log("Checking if user is logged in...");
+function is_logged_in() {
+    console.log("Checking if user is logged in...");
 
-//     let registerData = localStorage.getItem('userData');
-//     if (!registerData) {
-//         console.warn("No register_data found in localStorage.");
-//         return false;
-//     }
+    let registerData = localStorage.getItem('userData');
+    if (!registerData) {
+        console.warn("No register_data found in localStorage.");
+        return false;
+    }
 
-//     try {
-//         let parsedData = JSON.parse(registerData);
+    try {
+        let parsedData = JSON.parse(registerData);
 
-//         // Check if the user has a valid last_login timestamp
-//         if (!parsedData.last_login) {
-//             console.warn("User is not logged in: last_login is missing.");
-//             return false;
-//         }
+        // Check if the user has a valid last_login timestamp
+        if (!parsedData.last_login) {
+            console.warn("User is not logged in: last_login is missing.");
+            return false;
+        }
 
-//         // Parse the last_login timestamp as UTC
-//         const lastLoginTime = new Date(parsedData.last_login); // UTC timestamp from backend
-//         const currentTime = new Date(); // Current time in local timezone
-//         const timeDifference = currentTime - lastLoginTime; // Difference in milliseconds
-//         const fortyFiveMinutesInMilliseconds = 45 * 60 * 1000;
+        // Parse the last_login timestamp as local time
+        const lastLoginTime = new Date(parsedData.last_login); // Local timestamp from backend
+        const currentTime = new Date(); // Current local time
+        const timeDifference = currentTime - lastLoginTime; // Difference in milliseconds
+        const fortyFiveMinutesInMilliseconds = 45 * 60 * 1000;
 
-//         if (timeDifference > fortyFiveMinutesInMilliseconds) {
-//             console.warn("User session has expired. Attempting to refresh session...");
+        console.log("Last login time (Local):", lastLoginTime);
+        console.log("Current time (Local):", currentTime);
+        console.log("Time difference (ms):", timeDifference);
 
-//             // Prevent repeated calls by setting a flag in localStorage
-//             if (localStorage.getItem('isRefreshingSession')) {
-//                 console.warn("Session refresh already in progress. Skipping...");
-//                 return false;
-//             }
+        if (timeDifference > fortyFiveMinutesInMilliseconds) {
+            console.warn("User session has expired. Attempting to refresh session...");
 
-//             localStorage.setItem('isRefreshingSession', 'true'); // Set the flag
+            // Prevent repeated calls by setting a flag in localStorage
+            if (localStorage.getItem('isRefreshingSession')) {
+                console.warn("Session refresh already in progress. Skipping...");
+                return false;
+            }
 
-//             // Attempt to refresh session by calling login_user
-//             login_user().finally(() => {
-//                 localStorage.removeItem('isRefreshingSession'); // Clear the flag after login attempt
-//             });
+            localStorage.setItem('isRefreshingSession', 'true'); // Set the flag
 
-//             return false; // Return false for now, as the session is being refreshed
-//         }
+            // Attempt to refresh session by calling login_user
+            login_user().finally(() => {
+                localStorage.removeItem('isRefreshingSession'); // Clear the flag after login attempt
+            });
 
-//         console.log("User is logged in.");
-//         return true;
-//     } catch (error) {
-//         console.error("Error parsing register_data:", error);
-//         return false;
-//     }
-// }
+            return false; // Return false for now, as the session is being refreshed
+        }
 
-
-// async function login_user() {
-//     console.log("Calling login_user...");
-
-//     let registerData = localStorage.getItem('userData');
-//     if (!registerData) {
-//         console.warn("No register_data found in localStorage. Redirecting to registration...");
-//         render_register_page();
-//         return;
-//     }
-
-//     try {
-//         let parsedData = JSON.parse(registerData);
-//         const email = parsedData.email;
-//         const otp = parsedData.otp_secret;
-
-//         if (!email || !otp) {
-//             console.warn("Email or OTP is missing in register_data. Cannot proceed with login.");
-//             return;
-//         }
-
-//         const response = await fetch('/api/user/login', {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json'
-//             },
-//             body: JSON.stringify({ email, otp })
-//         });
-
-//         if (!response.ok) {
-//             console.error("Login failed:", response.statusText);
-//             alert("Login failed. Please check your credentials and try again.");
-//             return;
-//         }
-
-//         const userData = await response.json();
-//         console.log("Login successful. Fetched user data:", userData);
-
-//         // Update localStorage with the fetched user data, including the updated last_login
-//         localStorage.setItem('userData', encodeData(userData.user));
-//         console.log("Updated register_data in localStorage:", userData.user);
-
-//         // Redirect to the personal profile page or dashboard
-//         render_personal_profile();
-//     } catch (error) {
-//         console.error("Error during login_user:", error);
-//         alert("An error occurred during login. Please try again later.");
-//     }
-// }
-
-function is_logged_in(){
-    console.log('calling is_logged_in')
+        console.log("User is logged in.");
+        return true;
+    } catch (error) {
+        console.error("Error parsing register_data:", error);
+        return false;
+    }
 }
 
-function login_user(){
-    console.log('calling login_user')
+
+async function login_user() {
+    console.log("Calling login_user...");
+
+    let registerData = localStorage.getItem('userData');
+    if (!registerData) {
+        console.warn("No register_data found in localStorage. Redirecting to registration...");
+        render_register_page();
+        return;
+    }
+
+    try {
+        let parsedData = JSON.parse(registerData);
+        const email = parsedData.email;
+        const otp = parsedData.otp_secret;
+
+        if (!email || !otp) {
+            console.warn("Email or OTP is missing in register_data. Cannot proceed with login.");
+            return;
+        }
+
+        const response = await fetch('/api/user/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, otp })
+        });
+
+        if (!response.ok) {
+            console.error("Login failed:", response.statusText);
+            alert("Login failed. Please check your credentials and try again.");
+            return;
+        }
+
+        const userData = await response.json();
+        console.log("Login successful. Fetched user data:", userData);
+
+        // Update localStorage with the fetched user data, including the updated last_login
+        localStorage.setItem('userData', encodeData(userData.user));
+        console.log("Updated register_data in localStorage:", userData.user);
+
+        // Redirect to the personal profile page or dashboard
+        render_personal_profile();
+    } catch (error) {
+        console.error("Error during login_user:", error);
+        alert("An error occurred during login. Please try again later.");
+    }
 }
+
+
 
 function uninstall_app() {
     console.log("Uninstalling the app...");
@@ -511,16 +509,38 @@ function get_my_contacts() {
                 contact.user_dict = null; // Set to null if app_user_id is not present
             }
 
+            // Determine the status
+            let status = "not registered"; // Default status
+            if (contact.app_user && contact.user_dict?.last_login) {
+                // Parse last_login as UTC
+                const lastLoginTime = new Date(contact.user_dict.last_login); // UTC timestamp from backend
+                const currentTime = new Date(); // Current time in local timezone
+                const timeDifference = currentTime - lastLoginTime; // Difference in milliseconds
+                const twoMinutesInMilliseconds = 2 * 60 * 1000;
+
+                console.log("Last login time (UTC):", lastLoginTime.toUTCString()); // Log the last login time in UTC
+                console.log("Current time (Local):", currentTime); // Log the current time
+                console.log("Time difference (ms):", timeDifference); // Log the time difference
+
+                if (timeDifference <= twoMinutesInMilliseconds) {
+                    status = "online";
+                } else {
+                    // Format last_seen as a readable timestamp
+                    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                    status = `last seen: ${lastLoginTime.toLocaleString(undefined, options)}`;
+                }
+            }
+
             return {
                 item_type: "list_item_contact",
                 label: contact.contact_name,
                 id: contact.id,
-                status: "online", // Default status
+                status: status, // Computed status
                 user_dict: contact.user_dict // Append user_dict
             };
         });
 
-        console.log("Processed contacts with user_dict:", contacts);
+        console.log("Processed contacts with user_dict and status:", contacts);
         return contacts;
 
     } catch (error) {
@@ -694,10 +714,9 @@ function getDevicePlatform() {
 
 
 function get_my_chats() {
-    console.log("calling get_my_chats");
+    console.log("Fetching chats...");
 
     let registerData = localStorage.getItem('userData');
-
     if (!registerData) {
         console.warn("No register_data found in localStorage.");
         return [];
@@ -714,7 +733,7 @@ function get_my_chats() {
 
         // Fetch chats from API (Synchronous fetch to be used directly in structure)
         let request = new XMLHttpRequest();
-        request.open("GET", `/api/user/${user_id}/chats`, false); // Synchronous request
+        request.open("GET", `/api/user/${user_id}/chats`, false); // Sync request
         request.send(null);
 
         if (request.status !== 200) {
@@ -725,14 +744,78 @@ function get_my_chats() {
         let chats = JSON.parse(request.responseText);
         console.log("Fetched chats:", chats); // Log the fetched chats
 
-        // Map API response to UI structure format
-        return chats.map(chat => ({
-            item_type: "list_item_chat",
-            label: chat.chat_type === "single" ? `Chat ${chat.id}` : `Group ${chat.id}`,
-            last_message: "Tap to open chat", // Placeholder text
-            notification_badge: 2, // No unread count in API response
-            id:chat.id
-        }));
+        // Process chats
+        chats = chats.map(chat => {
+            let chatDetails = {
+                item_type: "list_item_chat",
+                label: "",
+                last_message: "Tap to open chat", // Placeholder text
+                notification_badge: 2, // Placeholder for unread count
+                id: chat.id,
+                user_dict: null,
+                group_dict: null,
+                status: "unknown" // Default status
+            };
+
+            if (chat.chat_type === "single") {
+                // Fetch user details for single chat
+                try {
+                    let userRequest = new XMLHttpRequest();
+                    userRequest.open("GET", `/api/user/${chat.creator_id}`, false); // Sync request
+                    userRequest.send(null);
+
+                    if (userRequest.status === 200) {
+                        let user = JSON.parse(userRequest.responseText);
+                        chatDetails.user_dict = user; // Append user object
+                        chatDetails.label = user.username; // Use username as label
+
+                        // Determine user status
+                        if (user.last_login) {
+                            const lastLoginTime = new Date(user.last_login);
+                            const currentTime = new Date();
+                            const timeDifference = currentTime - lastLoginTime;
+                            const twoMinutesInMilliseconds = 2 * 60 * 1000;
+
+                            if (timeDifference <= twoMinutesInMilliseconds) {
+                                chatDetails.status = "online";
+                            } else {
+                                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                                chatDetails.status = `last seen: ${lastLoginTime.toLocaleString(undefined, options)}`;
+                            }
+                        } else {
+                            chatDetails.status = "not registered";
+                        }
+                    } else {
+                        console.warn(`Failed to fetch user for chat creator_id: ${chat.creator_id}`);
+                    }
+                } catch (error) {
+                    console.error(`Error fetching user for chat creator_id: ${chat.creator_id}`, error);
+                }
+            } else if (chat.chat_type === "group") {
+                // Fetch group details for group chat
+                try {
+                    let groupRequest = new XMLHttpRequest();
+                    groupRequest.open("GET", `/api/group/${chat.chat_id}`, false); // Sync request
+                    groupRequest.send(null);
+
+                    if (groupRequest.status === 200) {
+                        let group = JSON.parse(groupRequest.responseText);
+                        chatDetails.group_dict = group; // Append group object
+                        chatDetails.label = group.name; // Use group name as label
+                        chatDetails.status = "group chat"; // Set status for group chats
+                    } else {
+                        console.warn(`Failed to fetch group for chat_id: ${chat.chat_id}`);
+                    }
+                } catch (error) {
+                    console.error(`Error fetching group for chat_id: ${chat.chat_id}`, error);
+                }
+            }
+
+            return chatDetails;
+        });
+
+        console.log("Processed chats with user_dict and group_dict:", chats);
+        return chats;
 
     } catch (error) {
         console.error("Error fetching chats:", error);

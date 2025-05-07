@@ -19,7 +19,6 @@ function create_top_section(items) {
     let right_content = document.createElement("div");
     right_content.classList.add("right_content");
 
-
     items.forEach(item => {
         if (item.visible) {
             if (item.component_type === "icon_label") {
@@ -27,7 +26,7 @@ function create_top_section(items) {
 
                 if (item.position === "left") {
                     left_content.innerHTML = iconHTML;
-                    
+
                     // Add Back Navigation Logic (Except for Start Interface)
                     if (item.action) {
                         left_content.classList.add("clickable");
@@ -44,16 +43,15 @@ function create_top_section(items) {
             } else if (item.component_type === "text") {
                 title_content.innerHTML = `<h3 class="top_title">${item.label}</h3>`;
             } else if (item.component_type === "item_search") {
-                
+                // Declare and initialize item_search as a DOM element
+                let item_search = document.createElement("div");
+                item_search.classList.add("search_container");
                 item_search.innerHTML = `
-                    <div class="search_container">
-                        <input type="text" placeholder="${item.placeholder}" class="search_input" />
-                    </div>
+                    <input type="text" placeholder="${item.placeholder}" class="search_input" />
                 `;
-                
+                center_content.appendChild(item_search); // Append to center_content
             }
         }
-
     });
 
     center_content.appendChild(title_content);
@@ -63,11 +61,10 @@ function create_top_section(items) {
     content_container.appendChild(right_content);
 
     section.appendChild(content_container);
-    
-    
 
     return section;
 }
+
 
 function create_middle_section(items) {
     let section = document.createElement("div");
@@ -163,12 +160,12 @@ function create_middle_section(items) {
                         case "list_item_chat":
                             listItemElement.innerHTML = `
                                 <div class="list_item_container">
-                                    <div class="list_item_image"></div>
+                                    <div class="list_item_image" style="background-image: url('${listItem.user_dict?.profile_image_url || listItem.group_dict?.profile_image_url || "static/images/default_chat.png"}');"></div>
                                     <div class="list_item_content">
-                                        <div class="list_item_title">${listItem.label}</div>
-                                        <p class="list_item_message">${listItem.last_message || listItem.balance}</p>
+                                        <div class="list_item_title">${listItem.user_dict?.username || listItem.group_dict?.name || "Unknown Chat"}</div>
+                                        <p class="list_item_message">${listItem.last_message || "No messages yet"}</p>
                                     </div>
-                                    <div class="notification_badge">${listItem.notification_badge}</div>
+                                    ${listItem.notification_badge ? `<div class="notification_badge">${listItem.notification_badge}</div>` : ""}
                                 </div>
                             `;
                             listItemElement.setAttribute('data-chat-id', listItem.id);
@@ -188,7 +185,7 @@ function create_middle_section(items) {
                             listItemElement.setAttribute("data-contact-id", listItem.id);
                             listItemElement.setAttribute("onclick", "render_other_profile_interface()");
                             break;
-
+                        
                         case "list_item_transaction":
                             listItemElement.innerHTML = `
                                 <div class="list_item_container">
