@@ -684,7 +684,6 @@ class LoadAmountGroupAccount(Resource):
             return {"message": "Amount loaded successfully"}
         return {"message": "Amount loading failed"}, 400
 
-
 class SendToPersonAccount(Resource):
     def post(self):
         data = request.get_json()
@@ -916,50 +915,28 @@ api.add_resource(CreateGroupChatMessage, '/api/chat/group/message')
 def render_app():
     return render_template('app.html')
 
-@app.route('/api/user/<int:user_id>/chats', methods=['GET'])
-def list_user_chats(user_id):
-    chats = Chat.query.filter_by(creator_id=user_id).order_by(Chat.id).all()
-    return jsonify([chat.to_dict() for chat in chats])
-
-# requires more work 
-@app.route('/api/user/<int:user_id>/involved_chats', methods=['GET'])
-def list_involved_chats(user_id):
-    # Get all chat memberships for the user
-    chat_memberships = ChatMembers.query.filter_by(user_id=user_id).all()
-    chat_ids = [membership.chat_id for membership in chat_memberships]
-    
-    # Get all chats where the user is a member but did not create the chat
-    chats = Chat.query.filter(Chat.id.in_(chat_ids), Chat.creator_id != user_id).all()
-    
-    return jsonify([chat.to_dict() for chat in chats])
-
-@app.route('/api/user/<int:user_id>/chats', methods=['POST'])
-def delete_user_chats(user_id):
-    data = request.get_json()
-    print(f"calling delete user chats with data : {data} for user_id {user_id}")
-    
-    id_payload = data.get('selected_data')
-
-    # Use 'item_id' instead of 'chat_id'
-    delete_list = [select_item['item_id'] for select_item in id_payload]
-
+@app.route('/api/user/<int:user_id>/all_chats', methods=['GET'])
+def list_all_user_chats(user_id):
     try:
-        for id in delete_list:
-            print(f"attempting to delete chat with id : {id}")
-            chat = Chat.query.filter_by(id=id).first()
-            if chat:
-                print(f"fetched chat is {chat.id}")
-                db.session.delete(chat)
-                db.session.commit()
-            else:
-                print(f"No chat found with id: {id}")
-        
-        return jsonify({"delete": True})
-        
-    except Exception as e:
-        print(f"Error deleting chats: {e}")
-        return jsonify({"delete": False, "error": f"{e}"})
+        # Fetch chats where the user is the creator
+        created_chats = Chat.query.filter_by(creator_id=user_id).all()
 
+        # Fetch chats where the user is a member but not the creator
+        chat_memberships = ChatMembers.query.filter_by(user_id=user_id).all()
+        member_chat_ids = [membership.chat_id for membership in chat_memberships]
+        involved_chats = Chat.query.filter(Chat.id.in_(member_chat_ids), Chat.creator_id != user_id).all()
+
+        # Combine both lists
+        all_chats = created_chats + involved_chats
+
+        # Convert to dictionary format
+        all_chats_data = [chat.to_dict() for chat in all_chats]
+
+        return jsonify({"message": "Chats fetched successfully", "chats": all_chats_data}), 200
+
+    except Exception as e:
+        print(f"Error fetching all chats for user {user_id}: {e}")
+        return jsonify({"message": "Error fetching chats", "error": str(e)}), 500
 
 api.add_resource(CreateSingleAccount, '/api/wallet/single')
 api.add_resource(CreateGroupAccount, '/api/wallet/group')
@@ -982,6 +959,21 @@ def list_user_contacts(user_id):
     return jsonify([contact.to_dict() for contact in contacts])
 
 
+@app.route('/api/user/<int:user_id>/contact/<int:contact_id>', methods=['GET'])
+def get_user_contact(user_id, contact_id):
+    try:
+        # Fetch the contact for the given user_id and contact_id
+        contact = Contact.query.filter_by(adding_user_id=user_id, id=contact_id).first()
+
+        if not contact:
+            return jsonify({"message": "Contact not found"}), 404
+
+        return jsonify({"message": "Contact fetched successfully", "contact": contact.to_dict()}), 200
+
+    except Exception as e:
+        print(f"Error fetching contact for user {user_id} and contact {contact_id}: {e}")
+        return jsonify({"message": "Error fetching contact", "error": str(e)}), 500
+    
 
 @app.route('/api/user/<int:user_id>/contacts', methods=['POST'])
 def delete_user_contacts(user_id):

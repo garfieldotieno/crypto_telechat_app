@@ -538,6 +538,7 @@ function get_my_contacts() {
                 status: status, // Computed status
                 user_dict: contact.user_dict // Append user_dict
             };
+            
         });
 
         console.log("Processed contacts with user_dict and status:", contacts);
@@ -714,7 +715,7 @@ function getDevicePlatform() {
 
 
 function get_my_chats() {
-    console.log("Fetching chats...");
+    console.log("Fetching all chats...");
 
     let registerData = localStorage.getItem('userData');
     if (!registerData) {
@@ -731,9 +732,9 @@ function get_my_chats() {
             return [];
         }
 
-        // Fetch chats from API (Synchronous fetch to be used directly in structure)
+        // Fetch all chats using the new endpoint
         let request = new XMLHttpRequest();
-        request.open("GET", `/api/user/${user_id}/chats`, false); // Sync request
+        request.open("GET", `/api/user/${user_id}/all_chats`, false); // Sync request
         request.send(null);
 
         if (request.status !== 200) {
@@ -741,7 +742,7 @@ function get_my_chats() {
             return [];
         }
 
-        let chats = JSON.parse(request.responseText);
+        let chats = JSON.parse(request.responseText).chats;
         console.log("Fetched chats:", chats); // Log the fetched chats
 
         // Process chats
@@ -795,7 +796,7 @@ function get_my_chats() {
                 // Fetch group details for group chat
                 try {
                     let groupRequest = new XMLHttpRequest();
-                    groupRequest.open("GET", `/api/group/${chat.chat_id}`, false); // Sync request
+                    groupRequest.open("GET", `/api/group/${chat.id}`, false); // Sync request
                     groupRequest.send(null);
 
                     if (groupRequest.status === 200) {
@@ -804,10 +805,10 @@ function get_my_chats() {
                         chatDetails.label = group.name; // Use group name as label
                         chatDetails.status = "group chat"; // Set status for group chats
                     } else {
-                        console.warn(`Failed to fetch group for chat_id: ${chat.chat_id}`);
+                        console.warn(`Failed to fetch group for chat_id: ${chat.id}`);
                     }
                 } catch (error) {
-                    console.error(`Error fetching group for chat_id: ${chat.chat_id}`, error);
+                    console.error(`Error fetching group for chat_id: ${chat.id}`, error);
                 }
             }
 

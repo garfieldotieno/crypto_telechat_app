@@ -381,33 +381,52 @@ function process_create_single_chat(data) {
     // Extract the selected contact's item_id
     const contact_id = data[0].item_id; // Assuming only one contact is selected for single chat
 
-    // Step 1: Create the single chat
-    fetch('/api/chat/single', {
-        method: 'POST',
+    // Step 1: Fetch the contact record from the backend using the new endpoint
+    fetch(`/api/user/${user_id}/contact/${contact_id}`, {
+        method: 'GET',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ creator_id: user_id }),
     })
         .then((response) => {
-            if (response.status === 201 || response.status === 200) {
-                return response.json(); // Chat created successfully
+            if (response.status === 200) {
+                return response.json(); // Successfully fetched the contact
+            } else if (response.status === 404) {
+                throw new Error('Contact not found');
             } else {
-                throw new Error('Failed to create single chat');
+                throw new Error('Failed to fetch contact');
             }
         })
-        .then((chatData) => {
-            console.log('Single chat created successfully:', chatData);
+        .then((responseData) => {
+            const contact = responseData.contact;
+            console.log('Fetched contact record:', contact);
 
-            // Step 2: Add the selected contact as a member of the chat
-            const chat_id = chatData.chat_id;
-
-            return fetch('/api/chat/member', {
+            // Step 2: Create the single chat
+            return fetch('/api/chat/single', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ chat_id: chat_id, user_id: contact_id }),
+                body: JSON.stringify({ creator_id: user_id }),
+            }).then((response) => {
+                if (response.status === 201 || response.status === 200) {
+                    return response.json(); // Chat created successfully
+                } else {
+                    throw new Error('Failed to create single chat');
+                }
+            }).then((chatData) => {
+                console.log('Single chat created successfully:', chatData);
+
+                // Step 3: Add the contact's app_user_id as a member of the chat
+                const chat_id = chatData.chat_id;
+
+                return fetch('/api/chat/member', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ chat_id: chat_id, user_id: contact.app_user_id }),
+                });
             });
         })
         .then((response) => {

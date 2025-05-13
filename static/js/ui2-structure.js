@@ -59,7 +59,7 @@ const ui_structure = {
             { visible: false, component_type: "icon_label", icon: "fa-solid fa-edit", label: "Edit", position: "right" }
         ],
         chat_message_page: [
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
+            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action:"render_contact_listing('normal')" },
             { visible: true, component_type: "text", label: "Messages", position: "center" },
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-info-circle", label: "Info", position: "right" }
         ]
@@ -118,7 +118,7 @@ const ui_structure = {
             {
                 visible: true,
                 component_type: "item_search",
-                placeholder: "Search Chats",
+                placeholder: "Search Chat",
                 action: "search_chats()" // Add a valid search function
             },
             {
@@ -127,6 +127,9 @@ const ui_structure = {
                 component_owner: "chat_page",
                 item_list: []
             }
+        ],
+        chat_message_page:[
+            { visible: true, component_type: "background_image", img_src: "static/images/chat_wallpaper.jpeg" },
         ]
     },
     
@@ -217,7 +220,43 @@ const ui_structure = {
                     
                 ] 
             }
+        ],
+        create_message_page: [
+            {
+                visible: true,
+                component_type: "horizontal_stack",
+                item_list: [
+                    {
+                        item_type: "icon",
+                        icon_name: "fa-solid fa-paperclip", // Font Awesome paperclip icon
+                        action: "open_attachment()"
+                    },
+                    {
+                        item_type: "input",
+                        input_type: "text",
+                        placeholder: "Write a message...",
+                        style: {
+                            border_radius: "20px",
+                            padding: "10px",
+                            flex: 1, // Make it expand in the middle
+                            border: "1px solid #ccc"
+                        },
+                        bind_variable: "new_message"
+                    },
+                    {
+                        item_type: "icon",
+                        icon_name: "fa-solid fa-face-smile", // Font Awesome smiley face icon
+                        action: "open_emoji_picker()"
+                    },
+                    {
+                        item_type: "icon",
+                        icon_name: "fa-solid fa-camera", // Font Awesome camera icon
+                        action: "open_camera()"
+                    }
+                ]
+            }
         ]
+          
     },
 
     create_section: {
@@ -295,33 +334,119 @@ const ui_structure = {
             }
     
             console.log("Fetched user data:", userData);
-    
-            // Update the middle_section.personal_profile_page dynamically
-            this.middle_section.personal_profile_page = [
-                { visible: true, component_type: "profile_image", img_src: userData.profile_image_url || "static/images/default_profile.png" },
-                { visible: true, component_type: "profile_background_image", img_src: userData.wall_image_url || "static/images/default_background.png" },
-                { visible: true, component_type: "separation_title", label: "Bio" },
-                { visible: true, component_type: "info_section", label: userData.registerd_bio },
-                { visible: true, component_type: "separation_title", label: "Actions" }
-            ];
-    
+            
             // Check if the user is logged in
             const isLoggedIn = is_logged_in();
+
+            // Update the middle_section.personal_profile_page dynamically
+            this.middle_section.personal_profile_page = [
+                { 
+                    visible: true, 
+                    component_type: "profile_image", 
+                    img_src: userData.profile_image_url || "static/images/default_profile.png" 
+                },
+                { 
+                    visible: true, 
+                    component_type: "profile_background_image", 
+                    img_src: userData.wall_image_url || "static/images/default_background.png" 
+                },
+                {
+                    visible: true,
+                    component_type: "surface_pad",
+                    item_list: [
+                        // add icon and label
+                        { 
+                            visible: true, 
+                            component_type: "icon_label", 
+                            icon: "fa-solid fa-user", // Font Awesome user icon
+                            label: `${userData.username}`, 
+                            action: `copy_to_clipboard('${userData.username}')` 
+                        },
+                        { 
+                            visible: true, 
+                            component_type: "icon_label", 
+                            icon: "fa-solid fa-envelope", // Font Awesome envelope icon
+                            label: `${userData.email}`, 
+                            action: `copy_to_clipboard('${userData.email}')` 
+                        }
+                    ]
+                },
+                {
+                    visible: true,
+                    component_type: "surface_pad",
+                    item_list: [
+                        // add icon and label
+                        { 
+                            visible: true, 
+                            component_type: "icon_label", 
+                            icon: "fa-solid fa-file", // Font Awesome user icon
+                            label: `files`, 
+                            action: `copy_to_clipboard('${userData.username}')` 
+                        },
+                        { 
+                            visible: true, 
+                            component_type: "icon_label", 
+                            icon: "fa-solid fa-link", // Font Awesome envelope icon
+                            label: `links`, 
+                            action: `copy_to_clipboard('${userData.email}')` 
+                        }
+                    ]
+                },
+                {
+                    visible: true,
+                    component_type: "surface_pad",
+                    item_list: [
+                        // add icon and label
+                        { 
+                            visible: true, 
+                            component_type: "icon_label", 
+                            icon: "fa-solid fa-users", // Font Awesome user icon
+                            label: `Groups`, 
+                            action: `copy_to_clipboard('${userData.username}')` 
+                        },
+                        
+                    ]
+                },
+                {
+                    visible: true,
+                    component_type: "surface_pad",
+                    item_list: [
+                        isLoggedIn
+                            ? {
+                                visible: true, 
+                                component_type: "icon_label", 
+                                icon: "fa-solid fa-wallet", // Font Awesome user icon
+                                // Font Awesome wallet icon
+                                label: 'Wallet',
+                                action: "activate_wallet()"
+                            }
+                            : {
+                                visible: true, 
+                                component_type: "icon_label", 
+                                icon: "fa-solid fa-login", // Font Awesome user icon
+                                // Font Awesome wallet icon
+                                label: 'Login',
+                                action: "login_user()"
+                            },
+                            {
+                                visible: true, 
+                                component_type: "icon_label", 
+                                icon: "fa-solid fa-trash-alt", // Font Awesome user icon
+                                // Font Awesome wallet icon
+                                label: 'Uninstall',
+                                action: "uninstall_app()"
+                            }
+
+                    ]
+                }
+
+            ];
+    
+            
     
             // Update the bottom_section.personal_profile_page dynamically
             this.bottom_section.personal_profile_page = [
-                {
-                    visible: true,
-                    component_type: "button_stack",
-                    item_list: [
-                        { item_type: "button", item_label: `${userData.username}`, action: `copy_to_clipboard('${userData.username}')` },
-                        { item_type: "button", item_label: `${userData.email}`, action: `copy_to_clipboard('${userData.email}')` },
-                        isLoggedIn
-                            ? { item_type: "button", item_label: "Wallet", action: "activate_wallet()" }
-                            : { item_type: "button", item_label: "Login", action: "login_user()" },
-                        { item_type: "button", item_label: "Uninstall App", action: "uninstall_app()" } // Add Uninstall App button
-                    ]
-                }
+                
             ];
     
             console.log("Updated personal_profile_page:", this.middle_section.personal_profile_page);
@@ -383,9 +508,7 @@ const ui_structure = {
         console.log("updating the group profile data")
     },
     
-    update_other_profile_data: async function (){
-        console.log("updating the other profile data")
-    }
+ 
 };
 
 // window.ui_structure = ui_structure;

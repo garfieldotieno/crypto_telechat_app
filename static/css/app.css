@@ -169,13 +169,17 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: stretch; /* Ensure buttons stretch to full width */
-    gap: 10px;
+    gap: 10px; /* Add spacing between buttons */
     width: 100%; /* Occupy full width of the parent container */
     padding: 0; /* Remove padding to align with the container */
 }
 
 /* Button styling */
 .button_item {
+    display: flex;
+    align-items: center; /* Align icon and label vertically */
+    justify-content: center; /* Center the content horizontally */
+    gap: 10px; /* Space between icon and label */
     width: 100%; /* Ensure button occupies full width of the button_stack */
     padding: 12px;
     background-color: #232D3B;
@@ -186,7 +190,94 @@ html, body {
     cursor: pointer;
     text-align: center;
     box-sizing: border-box; /* Include padding and border in width calculation */
+    transition: background-color 0.3s ease; /* Smooth hover effect */
 }
+
+
+/* Icon inside button */
+.button_item i {
+    flex: 0 0 20%; /* Occupy 20% of the width */
+    text-align: center; /* Center the icon horizontally */
+    font-size: 18px; /* Icon size */
+    color: inherit; /* Match the icon color with the button text */
+}
+
+/* Label inside button */
+.button_item span {
+    flex: 1 1 80%; /* Occupy 80% of the width */
+    text-align: left; /* Align the label text to the left */
+    font-size: 16px; /* Adjust label size */
+    color: inherit; /* Match the label color with the button text */
+}
+
+/* Button hover effect */
+.button_item:hover {
+    background-color: #3C5E72; /* Slightly lighter background on hover */
+}
+
+/* Danger button styling */
+.button_item.danger {
+    background-color: #E74C3C; /* Red background for danger buttons */
+    color: #FFFFFF; /* White text */
+}
+
+
+/* Surface Pad Styling */
+.surface_pad {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* Ensure items stretch to full width */
+    gap: 10px; /* Add spacing between items */
+    width: 100vw; /* Occupy the full width of the viewport */
+    padding: 15px;
+    background-color: #232D3B; /* Background color for the surface pad */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+/* Icon Label Styling */
+.icon_label {
+    display: flex;
+    align-items: center; /* Align icon and label vertically */
+    justify-content: flex-start; /* Align content to the left */
+    padding: 10px;
+    background-color: #17212B; /* Background color for each item */
+    color: #A1B6C3; /* Text color */
+    cursor: pointer; /* Pointer cursor for clickable items */
+    transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+/* Icon inside Icon Label */
+.icon_label i {
+    flex: 0 0 20%; /* Occupy 20% of the width */
+    text-align: center; /* Center the icon horizontally */
+    font-size: 18px; /* Icon size */
+    color: inherit; /* Match the icon color with the text */
+}
+
+/* Label inside Icon Label */
+.icon_label span {
+    flex: 1 1 80%; /* Occupy 80% of the width */
+    text-align: center; /* Align the label text to the left */
+    font-size: 16px; /* Adjust label size */
+    color: inherit; /* Match the label color with the text */
+    display: flex;
+    align-items: center; /* Center the text vertically */
+}
+
+/* Hover Effect for Icon Label */
+.icon_label:hover {
+    background-color: #3C5E72; /* Slightly lighter background on hover */
+}
+
+/* Surface Pad with No Items */
+.surface_pad.empty {
+    justify-content: center; /* Center content vertically */
+    text-align: center; /* Center text horizontally */
+    color: #A1B6C3; /* Text color for empty state */
+    font-size: 14px; /* Font size for empty state */
+    font-style: italic; /* Italicize the text */
+}
+
 
 /* Content container in top section */
 .top_section .content_container {
@@ -271,11 +362,83 @@ html, body {
     font-size: 12px; /* Adjust label size */
 }
 
+/* Horizontal Stack for Create Message Page */
+.horizontal_stack {
+    display: flex;
+    align-items: center; /* Align items vertically */
+    justify-content: space-between; /* Distribute items evenly */
+    gap: 10px; /* Space between items */
+    padding: 10px;
+    background-color: #17212B; /* Background color for the stack */
+    border-top: 1px solid #232D3B; /* Add a subtle border at the top */
+    width: 100%; /* Full width of the container */
+    box-sizing: border-box; /* Include padding and border in width calculation */
+}
+
+/* Icon Styling in Horizontal Stack */
+.horizontal_stack .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; /* Fixed width for icons */
+    height: 40px; /* Fixed height for icons */
+    font-size: 18px; /* Icon size */
+    color: #A1B6C3; /* Icon color */
+    background-color: #232D3B; /* Background color for the icon */
+    border-radius: 50%; /* Make the icon circular */
+    cursor: pointer; /* Pointer cursor for clickable icons */
+    transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+/* Hover Effect for Icons */
+.horizontal_stack .icon:hover {
+    background-color: #3C5E72; /* Slightly lighter background on hover */
+}
+
+/* Input Field Styling in Horizontal Stack */
+.horizontal_stack .input {
+    flex: 1; /* Allow the input to expand and fill available space */
+    height: 40px; /* Fixed height for the input */
+    padding: 10px;
+    font-size: 16px; /* Adjust font size */
+    color: #A1B6C3; /* Text color */
+    background-color: #232D3B; /* Background color for the input */
+    border: 1px solid #3C5E72; /* Border color */
+    border-radius: 20px; /* Rounded corners */
+    outline: none; /* Remove default outline */
+    box-sizing: border-box; /* Include padding and border in width calculation */
+}
+
+/* Placeholder Styling for Input Field */
+.horizontal_stack .input::placeholder {
+    color: #A1B6C3; /* Placeholder text color */
+    text-align: center; /* Center the placeholder text */
+}
+
+/* Responsive Design for Horizontal Stack */
+@media (max-width: 768px) {
+    .horizontal_stack {
+        gap: 5px; /* Reduce spacing between items on smaller screens */
+        padding: 8px; /* Reduce padding */
+    }
+
+    .horizontal_stack .icon {
+        width: 35px; /* Smaller icon size */
+        height: 35px;
+        font-size: 16px; /* Adjust font size */
+    }
+
+    .horizontal_stack .input {
+        height: 35px; /* Smaller input height */
+        font-size: 14px; /* Adjust font size */
+    }
+}
+
 
 
 /* Profile Image Styling */
 .profile_image_wrapper {
-    height: 33vh; /* 1/3 of the viewport height */
+    height: 18vh; /* 1/3 of the viewport height */
     width: 100%; /* Full width */
     position: relative;
     overflow: hidden;
@@ -308,6 +471,7 @@ html, body {
     height: 100%;
     object-fit: cover;
     border-radius: 50%; /* Ensure the image is circular */
+    margin-bottom: 2rem;
 }
 
 /* Separation Title Styling */
@@ -319,6 +483,30 @@ html, body {
     margin: 10px 0;
     font-size: 18px;
     font-weight: bold;
+    border-radius: 5px; /* Add rounded corners */
+}
+
+/* Info Row Styling */
+.info_row {
+    display: flex;
+    align-items: center;
+    background-color: #17212B;
+    color: #A1B6C3;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    font-size: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+}
+
+.info_row .info_icon {
+    margin-right: 10px; /* Space between icon and label */
+    font-size: 18px; /* Icon size */
+}
+
+.info_row .info_label {
+    flex-grow: 1; /* Allow the label to take up remaining space */
+    text-align: left; /* Align the label text to the left */
 }
 
 /* Info Section Styling */

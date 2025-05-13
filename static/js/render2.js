@@ -70,30 +70,40 @@ function create_middle_section(items) {
     let section = document.createElement("div");
     section.classList.add("middle_section");
 
-    // Apply flexbox styles to ensure items float from the top and spread out
     section.style.display = "flex";
     section.style.flexDirection = "column";
-    section.style.alignItems = "center"; // Center items horizontally
-    section.style.justifyContent = "flex-start"; // Start items from the top
-    section.style.gap = "10px"; // Add spacing between items
-    section.style.padding = "10px"; // Add padding for better spacing
+    section.style.alignItems = "center";
+    section.style.justifyContent = "flex-start";
+    section.style.gap = "10px";
+    section.style.padding = "10px";
 
     items.forEach(item => {
-        if (!item.visible) return; // Skip hidden elements
+        if (!item.visible) return;
 
         let element = document.createElement("div");
 
         switch (item.component_type) {
-            case "item_search":
-                element.classList.add("search_container");
-                element.innerHTML = `
-                    <input type="text" placeholder="${item.placeholder}" class="search_input" oninput="${item.action}" />
-                `;
-                break;
+            case "surface_pad":
+                element.classList.add("surface_pad");
+                item.item_list.forEach(subItem => {
+                    if (!subItem.visible) return;
 
-            case "background_image":
-                element.classList.add("image_wrapper");
-                element.innerHTML = `<img src="${item.img_src}" class="background_image" />`;
+                    let subElement = document.createElement("div");
+                    subElement.classList.add("icon_label");
+
+                    // Add icon and label
+                    subElement.innerHTML = `
+                        <i class="${subItem.icon}"></i>
+                        <span>${subItem.label}</span>
+                    `;
+
+                    // Add action
+                    if (subItem.action) {
+                        subElement.setAttribute("onclick", subItem.action);
+                    }
+
+                    element.appendChild(subElement);
+                });
                 break;
 
             case "profile_image":
@@ -114,33 +124,15 @@ function create_middle_section(items) {
 
             case "separation_title":
                 element.classList.add("separation_title");
-                element.innerHTML = `
-                    <div class="separation_title_label">${item.label}</div>
-                `;
+                element.innerHTML = `<div class="separation_title_label">${item.label}</div>`;
                 break;
 
             case "info_section":
                 element.classList.add("info_section");
-                element.innerHTML = `
-                    <div class="info_content">${item.label}</div>
-                `;
+                element.innerHTML = `<div class="info_content">${item.label}</div>`;
                 break;
-
-            case "label_item":
-                element.classList.add("label_item");
-                element.innerHTML = `
-                    <div class="label_item_content" onclick="${item.action}">${item.label}</div>
-                `;
-                break;
-
-            case "resource_listing_interface":
-                element.classList.add("resource_listing_interface");
-                element.innerHTML = `
-                    <div class="resource_title">${item.label}</div>
-                    <div class="resource_list" onclick="${item.action}">Loading ${item.resource_type}...</div>
-                `;
-                break;
-
+            
+            
             case "list_pad":
                 element.classList.add("list_pad_container");
 
@@ -182,7 +174,15 @@ function create_middle_section(items) {
                                     </div>
                                 </div>
                             `;
+
+                            // Add dynamic attributes using user_dict
                             listItemElement.setAttribute("data-contact-id", listItem.id);
+                            listItemElement.setAttribute("data-contact-online-status", listItem.status);
+                            listItemElement.setAttribute("data-contact-registerd-status", listItem.user_dict?.registerd_state || "false");
+                            listItemElement.setAttribute("data-contact-registerd-wallet", listItem.user_dict?.registerd_wallet || "false");
+                            listItemElement.setAttribute("data-contact-app-user-id", listItem.user_dict?.id || "null");
+
+                            // Add click action
                             listItemElement.setAttribute("onclick", "render_other_profile_interface()");
                             break;
                         
@@ -208,6 +208,7 @@ function create_middle_section(items) {
                 });
                 break;
 
+            
             default:
                 console.warn(`Unknown component_type: ${item.component_type}`);
         }
@@ -218,7 +219,7 @@ function create_middle_section(items) {
     return section;
 }
 
-// 🛠️ Function to Create Bottom Section
+
 function create_bottom_section(items) {
     let section = document.createElement("div");
     section.classList.add("bottom_section");
@@ -230,9 +231,18 @@ function create_bottom_section(items) {
 
             item.item_list.forEach(btn => {
                 let button = document.createElement("button");
-                button.innerHTML = btn.item_label;
                 button.classList.add("button_item");
-                button.setAttribute("onclick", btn.action);
+
+                // Add icon and label
+                button.innerHTML = `
+                    ${btn.icon ? `<i class="${btn.icon}"></i>` : ""} 
+                    ${btn.item_label}
+                `;
+
+                // Add action
+                if (btn.action) {
+                    button.setAttribute("onclick", btn.action);
+                }
 
                 buttonContainer.appendChild(button);
             });
@@ -240,42 +250,91 @@ function create_bottom_section(items) {
             section.appendChild(buttonContainer);
         } else if (item.visible && item.component_type === "button") {
             let button = document.createElement("button");
-            button.innerHTML = item.label;
             button.classList.add("button_item");
-            button.setAttribute("onclick", item.action);
+
+            // Add icon and label
+            button.innerHTML = `
+                ${item.icon ? `<i class="${item.icon}"></i>` : ""} 
+                ${item.label}
+            `;
+
+            // Add action
+            if (item.action) {
+                button.setAttribute("onclick", item.action);
+            }
 
             section.appendChild(button);
+        } else if (item.visible && item.component_type === "navbar") {
+            console.log(`now rendering the navbar at the bottom`)
 
-        } else if (item.visible && item.component_type === "navbar"){
-            nav_container = document.createElement('div');
-            nav_container.classList.add('navbar_container');
+            let navContainer = document.createElement("div");
+            navContainer.classList.add("navbar_container");
+
             item.item_list.forEach(navItem => {
                 let navItemElement = document.createElement("div");
-                navItemElement.classList.add('navbar_item');
+                navItemElement.classList.add("navbar_item");
+
+                // Add icon and label
                 navItemElement.innerHTML = `
                     <i class="${navItem.icon}"></i>
                     <span>${navItem.label}</span>
-                `
-                // Add htmx attributes for navigation
+                `;
+
+                // Add navigation actions
                 if (navItem.label === "Chats") {
-                                    
                     navItemElement.setAttribute("onclick", "render_chat_listing('normal')");
                 } else if (navItem.label === "Profile") {
-                    
                     navItemElement.setAttribute("onclick", "render_personal_profile()");
                 } else if (navItem.label === "Contacts") {
-                    
                     navItemElement.setAttribute("onclick", "render_contact_listing('normal')");
                 } else if (navItem.label === "Wallet") {
-                    
                     navItemElement.setAttribute("onclick", "render_wallet_interface()");
                 }
-                nav_container.appendChild(navItemElement);
+
+                navContainer.appendChild(navItemElement);
             });
 
-            section.appendChild(nav_container);
-        }
+            section.appendChild(navContainer);
+        } else if (item.visible && item.component_type === "horizontal_stack") {
+            let horizontalStack = document.createElement("div");
+            horizontalStack.classList.add("horizontal_stack");
 
+            item.item_list.forEach(stackItem => {
+                if (stackItem.item_type === "icon") {
+                    let iconElement = document.createElement("div");
+                    iconElement.classList.add("icon");
+                    iconElement.innerHTML = `<i class="${stackItem.icon_name}"></i>`;
+
+                    // Add action
+                    if (stackItem.action) {
+                        iconElement.setAttribute("onclick", stackItem.action);
+                    }
+
+                    horizontalStack.appendChild(iconElement);
+                } else if (stackItem.item_type === "input") {
+                    let inputElement = document.createElement("input");
+                    inputElement.type = stackItem.input_type || "text";
+                    inputElement.placeholder = stackItem.placeholder || "";
+                    inputElement.classList.add("input");
+
+                    // Apply custom styles if provided
+                    if (stackItem.style) {
+                        Object.keys(stackItem.style).forEach(key => {
+                            inputElement.style[key] = stackItem.style[key];
+                        });
+                    }
+
+                    // Bind variable if provided
+                    if (stackItem.bind_variable) {
+                        inputElement.setAttribute("data-bind", stackItem.bind_variable);
+                    }
+
+                    horizontalStack.appendChild(inputElement);
+                }
+            });
+
+            section.appendChild(horizontalStack);
+        }
     });
 
     return section;
@@ -478,7 +537,6 @@ function render_group_profile() {
 
 
 
-
 function render_other_profile() {
     console.log("Rendering other profile page...");
     // Clear previous content
@@ -567,31 +625,66 @@ function render_contact_listing(mode, processor_name) {
         switch (mode) {
             case "select_one":
                 console.log("Mode: select_one - Enabling single selection.");
-                load_resource_selection_data("contact", "select_one", processor_name)
+                load_resource_selection_data("contact", "select_one", processor_name);
                 document.querySelectorAll(".list_item_contact").forEach(item => {
                     item.classList.add("selectable");
                     item.onclick = () => handleSelectOne(item);
                 });
                 updateTopSection(centerContainer, ui_structure.top_section.select_contact_page);
-                // Update bottom section to use select_page definition
                 updateBottomSection(centerContainer, ui_structure.bottom_section.select_contact_page);
                 break;
 
             case "select_many":
                 console.log("Mode: select_many - Enabling multiple selection.");
-                load_resource_selection_data("contact", "select_many", processor_name)
+                load_resource_selection_data("contact", "select_many", processor_name);
                 document.querySelectorAll(".list_item_contact").forEach(item => {
                     item.classList.add("selectable");
                     item.onclick = () => handleSelectMany(item);
                 });
                 updateTopSection(centerContainer, ui_structure.top_section.select_contact_page);
-                // Update bottom section to use select_page definition
                 updateBottomSection(centerContainer, ui_structure.bottom_section.select_contact_page);
                 break;
 
             case "normal":
                 console.log("Mode: normal - Rendering contact listing in normal mode.");
-                load_resource_selection_data("contact", "normal", process_select)
+                load_resource_selection_data("contact", "normal", process_select);
+                break;
+
+            case "registerd_users":
+                console.log("Mode: registerd_users - Filtering registered users.");
+                load_resource_selection_data("contact", "select_many", processor_name);
+
+                document.querySelectorAll(".list_item_contact").forEach(item => {
+                    item.classList.add("selectable");
+                    item.onclick = () => handleSelectMany(item);
+                });
+                updateTopSection(centerContainer, ui_structure.top_section.select_contact_page);
+                updateBottomSection(centerContainer, ui_structure.bottom_section.select_contact_page);
+
+                const filterContacts = () => {
+                    const contacts = document.querySelectorAll(".list_item_contact");
+                    if (contacts.length > 0) {
+                        console.log("Contacts detected. Applying filters...");
+
+                        contacts.forEach(contact => {
+                            const isRegistered = contact.getAttribute("data-contact-registerd-status") === "true";
+                            const hasWallet = contact.getAttribute("data-contact-registerd-wallet") === "true";
+
+                            // Hide contacts that are not registered or don't have a wallet
+                            if (!isRegistered) {
+                                contact.style.display = "none";
+                            } else {
+                                contact.style.display = ""; // Ensure visible contacts are displayed
+                            }
+                        });
+                    } else {
+                        // Retry after a short delay if no contacts are found
+                        setTimeout(filterContacts, 100);
+                    }
+                };
+
+                // Start filtering
+                filterContacts();
                 break;
 
             default:
@@ -675,9 +768,13 @@ function handleSelectOne(item) {
 }
 
 function handleSelectMany(item) {
+    console.log(`calling handleSelectMany, for item  ${item}`);
+
     // Retrieve the resource value from resource_selection_data
     const resourceSelectionData = JSON.parse(localStorage.getItem("resource_selection_data")) || {};
     const resource = resourceSelectionData.resource;
+
+    console.log(`current resource being : ${resource}`);
 
     // Determine the attribute to fetch based on the resource type
     const itemId = resource === "contact"
@@ -1089,7 +1186,7 @@ function render_create_contact() {
 
 function render_create_chat(){
     console.log('calling render_create_chat')
-    render_contact_listing('select_many', 'create_chat');
+    render_contact_listing('registerd_users', 'create_chat');
 }
 
 function render_new_chat_group() {
@@ -1222,6 +1319,52 @@ function render_new_chat_group() {
     }
 }
 
+
+function render_chat_messages() {
+    console.log("Rendering chat messages interface...");
+
+    // Clear previous content
+    document.body.innerHTML = "";
+
+    // Determine container classes based on screen size
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    // Create main container
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    // Render top section
+    let topSectionConfig = ui_structure.top_section.chat_message_page;
+    if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+        centerContainer.appendChild(create_top_section(topSectionConfig));
+    }
+
+    // Render middle section
+    let middleSectionConfig = ui_structure.middle_section.chat_message_page;
+    if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+        let middleSection = create_middle_section(middleSectionConfig);
+        centerContainer.appendChild(middleSection);
+    } else {
+        // Add a placeholder for blank messages
+        let middleSection = document.createElement("div");
+        middleSection.classList.add("middle_section");
+        middleSection.innerHTML = `<div class="empty_message_placeholder">No messages yet</div>`;
+        centerContainer.appendChild(middleSection);
+    }
+
+    // Render bottom section
+    let bottomSectionConfig = ui_structure.bottom_section.create_message_page;
+    if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+        let bottomSection = create_bottom_section(bottomSectionConfig);
+        centerContainer.appendChild(bottomSection);
+    }
+}
 
 
 
