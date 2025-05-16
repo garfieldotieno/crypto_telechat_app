@@ -106,6 +106,16 @@ function create_middle_section(items) {
                 });
                 break;
 
+            case "transaction_summary_screen":
+                element.classList.add("transaction_summary_screen");
+                element.innerHTML = `
+                    <div class="transaction_item top_left">${item.item_list.top_left}</div>
+                    <div class="transaction_item top_right">${item.item_list.top_right}</div>
+                    <div class="transaction_item middle_center">${item.item_list.middle_center}</div>
+                    <div class="transaction_item bottom_right">${item.item_list.bottom_right}</div>
+                `;
+                break;
+
             case "profile_image":
                 element.classList.add("profile_image_wrapper");
                 element.innerHTML = `
@@ -122,8 +132,20 @@ function create_middle_section(items) {
                 `;
                 break;
 
+            case "background_image":
+                element.classList.add("image_wrapper");
+                element.innerHTML = `
+                 <img src="${item.img_src}" class="background_image" />
+                `;
+                break;
+
             case "separation_title":
                 element.classList.add("separation_title");
+                element.innerHTML = `<div class="separation_title_label">${item.label}</div>`;
+                break;
+            
+            case "separation_title_address":
+                element.classList.add("separation_title_address");
                 element.innerHTML = `<div class="separation_title_label">${item.label}</div>`;
                 break;
 
@@ -131,7 +153,6 @@ function create_middle_section(items) {
                 element.classList.add("info_section");
                 element.innerHTML = `<div class="info_content">${item.label}</div>`;
                 break;
-            
             
             case "list_pad":
                 element.classList.add("list_pad_container");
@@ -150,6 +171,8 @@ function create_middle_section(items) {
 
                     switch (listItem.item_type) {
                         case "list_item_chat":
+                            const chatMemberIds = listItem.chat_member_ids.join('.'); // Join member IDs with dots
+
                             listItemElement.innerHTML = `
                                 <div class="list_item_container">
                                     <div class="list_item_image" style="background-image: url('${listItem.user_dict?.profile_image_url || listItem.group_dict?.profile_image_url || "static/images/default_chat.png"}');"></div>
@@ -161,7 +184,9 @@ function create_middle_section(items) {
                                 </div>
                             `;
                             listItemElement.setAttribute('data-chat-id', listItem.id);
-                            listItemElement.setAttribute("onclick", "render_chat_interface()");
+                            listItemElement.setAttribute('data-chat-type', listItem.chat_type); // Add chat type attribute
+                            listItemElement.setAttribute('data-chat-member-ids', chatMemberIds); // Add chat member IDs attribute
+                            listItemElement.setAttribute("onclick", "render_chat_messages(event)");
                             break;
 
                         case "list_item_contact":
@@ -175,17 +200,13 @@ function create_middle_section(items) {
                                 </div>
                             `;
 
-                            // Add dynamic attributes using user_dict
                             listItemElement.setAttribute("data-contact-id", listItem.id);
                             listItemElement.setAttribute("data-contact-online-status", listItem.status);
                             listItemElement.setAttribute("data-contact-registerd-status", listItem.user_dict?.registerd_state || "false");
                             listItemElement.setAttribute("data-contact-registerd-wallet", listItem.user_dict?.registerd_wallet || "false");
                             listItemElement.setAttribute("data-contact-app-user-id", listItem.user_dict?.id || "null");
-
-                            // Add click action
-                            listItemElement.setAttribute("onclick", "render_other_profile_interface()");
                             break;
-                        
+
                         case "list_item_transaction":
                             listItemElement.innerHTML = `
                                 <div class="list_item_container">
@@ -208,7 +229,6 @@ function create_middle_section(items) {
                 });
                 break;
 
-            
             default:
                 console.warn(`Unknown component_type: ${item.component_type}`);
         }
@@ -492,8 +512,8 @@ async function render_personal_profile() {
 }
 
 
-function render_group_profile() {
-    console.log("Rendering group profile page...");
+async function render_group_profile(group_id) {
+    console.log(`Rendering group profile page for group ID: ${group_id}...`);
 
     // Clear previous content
     document.body.innerHTML = "";
@@ -511,56 +531,173 @@ function render_group_profile() {
     centerContainer.classList.add(centerContainerClass);
     container.appendChild(centerContainer);
 
-    // Parse UI structure for group profile page
-    let uiStructure = ui_structure.top_section.group_profile_page;
+    try {
+        // Dynamically update the group profile data
+        await ui_structure.update_group_profile_data(group_id);
 
-    // Build top section
-    if (uiStructure && uiStructure.some(item => item.visible)) {
-        centerContainer.appendChild(create_top_section(uiStructure));
+        // Parse UI structure for group profile page
+        let topSectionConfig = ui_structure.top_section.group_profile_page;
+        let middleSectionConfig = ui_structure.middle_section.group_profile_page;
+        let bottomSectionConfig = ui_structure.bottom_section.group_profile_page;
+
+        // Build top section
+        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+            centerContainer.appendChild(create_top_section(topSectionConfig));
+        }
+
+        // Build middle section for group profile page
+        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+            let middleSection = create_middle_section(middleSectionConfig);
+            centerContainer.appendChild(middleSection);
+        }
+
+        // Build bottom section for group profile page
+        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+            let bottomSection = create_bottom_section(bottomSectionConfig);
+            centerContainer.appendChild(bottomSection);
+        }
+    } catch (error) {
+        console.error("Error rendering group profile page:", error);
     }
-
-    // Build middle section for group profile page
-    let middleSectionConfig = ui_structure.middle_section.group_profile_page;
-    if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
-        let middleSection = create_middle_section(middleSectionConfig);
-        centerContainer.appendChild(middleSection);
-    }
-
-    // Build bottom section for group profile page
-    let bottomSectionConfig = ui_structure.bottom_section.group_profile_page;
-    if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
-        let bottomSection = create_bottom_section(bottomSectionConfig);
-        centerContainer.appendChild(bottomSection);
-    }
-
 }
 
 
 
-function render_other_profile() {
-    console.log("Rendering other profile page...");
+async function render_other_profile(user_id) {
+    console.log(`Rendering other profile page for user ID: ${user_id}...`);
+
     // Clear previous content
+    document.body.innerHTML = "";
+
+    // Determine container classes based on screen size
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    // Create main container
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    try {
+        // Dynamically update the other profile data
+        await ui_structure.update_other_profile_data(user_id);
+
+        // Parse UI structure for other profile page
+        let topSectionConfig = ui_structure.top_section.other_profile_page;
+        let middleSectionConfig = ui_structure.middle_section.other_profile_page;
+        let bottomSectionConfig = ui_structure.bottom_section.other_profile_page;
+
+        // Build top section
+        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+            centerContainer.appendChild(create_top_section(topSectionConfig));
+        }
+
+        // Build middle section for other profile page
+        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+            let middleSection = create_middle_section(middleSectionConfig);
+            centerContainer.appendChild(middleSection);
+        }
+
+        // Build bottom section for other profile page
+        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+            let bottomSection = create_bottom_section(bottomSectionConfig);
+            centerContainer.appendChild(bottomSection);
+        }
+    } catch (error) {
+        console.error("Error rendering other profile page:", error);
+    }
 }
 
 
-function render_wallet_interface(){
-    console.log("rendering for wallet_interface")
 
-    userData = decodeData(localStorage.getItem('userData'))
+async function render_wallet_interface() {
+    console.log("Rendering wallet interface...");
 
-    if (userData.registerd_wallet){
-        console.log('user wallet is registerd');
+    // Fetch user data from localStorage
+    const userData = decodeData(localStorage.getItem('userData'));
 
+    if (!userData) {
+        console.error("No user data found in localStorage. Redirecting to personal profile.");
+        render_personal_profile();
+        return;
+    }
 
-    } else{
-        console.log('user wallet is not registerd')
+    // Check if the user has a registered wallet
+    if (userData.registerd_wallet) {
+        console.log("User wallet is registered.");
+
+        try {
+            // Dynamically update wallet data in the UI structure
+            await ui_structure.update_wallet_data();
+
+            // Render the wallet start page
+            render_wallet_start();
+        } catch (error) {
+            console.error("Error updating wallet data:", error);
+            alert("Failed to load wallet interface. Please try again later.");
+        }
+    } else {
+        console.log("User wallet is not registered. Redirecting to personal profile.");
         render_personal_profile();
     }
 }
 
 
+
+
+
 function render_wallet_start() {
     console.log("Rendering wallet start page...");
+
+    // Clear previous content
+    document.body.innerHTML = "";
+
+    // Determine container classes based on screen size
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    // Create main container
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    // Render top section
+    let topSectionConfig = ui_structure.top_section.wallet_start_page;
+    if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+        centerContainer.appendChild(create_top_section(topSectionConfig));
+    }
+
+    // Render middle section
+    let middleSectionConfig = ui_structure.middle_section.wallet_start_page;
+    if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+        let middleSection = create_middle_section(middleSectionConfig);
+
+        // Dynamically update the balance section
+        const walletInfo = get_user_wallet();
+        if (walletInfo) {
+            const balanceSection = middleSection.querySelector(".balance_section");
+            if (balanceSection) {
+                balanceSection.innerHTML = `Balance: ${walletInfo.amount} USD`;
+            }
+        }
+
+        centerContainer.appendChild(middleSection);
+    }
+
+    // Render bottom section
+    let bottomSectionConfig = ui_structure.bottom_section.wallet_start_page;
+    if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+        let bottomSection = create_bottom_section(bottomSectionConfig);
+        centerContainer.appendChild(bottomSection);
+    }
 }
 
 
@@ -1320,8 +1457,26 @@ function render_new_chat_group() {
 }
 
 
-function render_chat_messages() {
+
+function render_chat_messages(event) {
     console.log("Rendering chat messages interface...");
+
+    // Extract the chat_id from the clicked element's data-chat-id attribute
+    const chat_id = event.currentTarget.getAttribute("data-chat-id");
+    const chat_type = event.currentTarget.getAttribute("data-chat-type"); // Access chat type
+    const chat_member_ids = event.currentTarget.getAttribute("data-chat-member-ids"); // Access chat member IDs
+
+    console.log(`Chat ID: ${chat_id}, Chat Type: ${chat_type}, Chat Member IDs: ${chat_member_ids}`);
+
+    console.log(`Chat ID extracted: ${chat_id}`);
+
+    if (!chat_id) {
+        console.error("No chat_id found on the clicked element.");
+        return;
+    }
+
+    // Load chat pad or perform any necessary setup
+    load_chat_pad(chat_id, chat_type, chat_member_ids);
 
     // Clear previous content
     document.body.innerHTML = "";
@@ -1365,7 +1520,6 @@ function render_chat_messages() {
         centerContainer.appendChild(bottomSection);
     }
 }
-
 
 
 

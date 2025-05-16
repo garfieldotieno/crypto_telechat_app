@@ -26,6 +26,25 @@ except Exception as e:
     print(f"Error connecting to the blockchain: {e}")
 
 
+def generate_ethereum_address():
+    """
+    Generate a new Ethereum address using Web3.
+    Returns a dictionary containing the address and private key.
+    """
+    try:
+        # Generate a new Ethereum account
+        account = web3.eth.account.create()
+
+        # Return the address and private key
+        return {
+            "address": account.address,
+            "private_key": account.key.hex()
+        }
+    except Exception as e:
+        print(f"Error generating Ethereum address: {e}")
+        return None
+    
+
 import uuid
 import json
 
@@ -209,25 +228,35 @@ class SingleWalletAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     balance = db.Column(db.Float, nullable=False, default=0.0)
+    public_address = db.Column(db.String(42), nullable=True)  # Ethereum public address
+    private_key = db.Column(db.Text, nullable=True)  # Encrypted private key
 
     def to_dict(self):
         result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
         for key, value in result.items():
             if isinstance(value, datetime):
                 result[key] = value.isoformat()
+        # Exclude private_key from the dictionary for security
+        result.pop('private_key', None)
         return result
+
 
 class GroupWalletAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=True)
     balance = db.Column(db.Float, nullable=False, default=0.0)
+    public_address = db.Column(db.String(42), nullable=True)  # Ethereum public address
+    private_key = db.Column(db.Text, nullable=True)  # Encrypted private key
 
     def to_dict(self):
         result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
         for key, value in result.items():
             if isinstance(value, datetime):
                 result[key] = value.isoformat()
+        # Exclude private_key from the dictionary for security
+        result.pop('private_key', None)
         return result
+
 
 class GroupWalletMembers(db.Model):
     __tablename__ = 'group_wallet_members'
@@ -245,15 +274,13 @@ class WalletAccountTransaction(db.Model):
     __tablename__ = 'wallet_account_transactions'
     id = db.Column(db.Integer, primary_key=True)
     uid = db.Column(db.String(36), nullable=False, default=lambda: str(uuid.uuid4()))
-    
     account_id = db.Column(db.Integer)
-    account_type = db.Column(db.String(10), nullable=False) # single or group
-    
-    transaction_type = db.Column(db.String(10), nullable=False)  # 'credit' or 'debit'
-    
+    account_type = db.Column(db.String(10), nullable=False)  # 'single' or 'group'
+    transaction_type = db.Column(db.String(20), nullable=False)  # 'credit', 'debit', 'vest', etc.
     amount = db.Column(db.Float, nullable=False)
+    vest_id = db.Column(db.Integer, nullable=True)  # For vesting-related transactions
+    request_id = db.Column(db.Integer, nullable=True)  # For withdrawal requests
     timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-
     transaction_hash = db.Column(db.String(64), nullable=False, default=lambda: ''.join(random.choices(string.ascii_letters + string.digits, k=64)))
     transaction_chain_status = db.Column(db.String(10), nullable=False, default='pending')
 
@@ -275,6 +302,24 @@ class TransactionLog(db.Model, BaseModelMixin):
     timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     event_metadata = db.Column(db.JSON, nullable=True)
     
+
+class VestingSchedule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    token_entry = db.Column(db.Float, nullable=False)
+    vesting_duration = db.Column(db.Integer, nullable=False)  # In days
+    yield_percentage = db.Column(db.Float, nullable=False)
+    wallet_account_id = db.Column(db.Integer, db.ForeignKey('wallet_account_transactions.id'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+
+    def to_dict(self):
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
+
 
 # RESTful API Resources
 class CreateUser(Resource):
@@ -870,7 +915,7 @@ def get_user(user_id):
     user = User.query.get(user_id)
     if user:
         return jsonify(user.to_dict())
-    return {"message": "User not found"}, 404
+    return jsonify({"error": "User not found"}), 404
 
 
 # delete user
@@ -909,6 +954,44 @@ api.add_resource(AddChatMember, '/api/chat/member')
 
 api.add_resource(CreateSingleChatMessage, '/api/chat/single/message')
 api.add_resource(CreateGroupChatMessage, '/api/chat/group/message')
+
+# fetch chat member
+@app.route('/api/chat/<int:chat_id>/members', methods=['GET'])
+def get_chat_members(chat_id):
+    try:
+        # Fetch all members of the specified chat
+        chat_members = ChatMembers.query.filter_by(chat_id=chat_id).all()
+
+        if not chat_members:
+            return jsonify({"message": "No members found for this chat"}), 404
+
+        # Convert the chat members to a list of dictionaries
+        members_data = [member.to_dict() for member in chat_members]
+
+        return jsonify({"message": "Chat members fetched successfully", "members": members_data}), 200
+
+    except Exception as e:
+        print(f"Error fetching members for chat_id {chat_id}: {e}")
+        return jsonify({"message": "Error fetching chat members", "error": str(e)}), 500
+
+
+@app.route('/api/chat/<int:chat_id>/group', methods=['GET'])
+def get_group_chat(chat_id):
+    try:
+        # Fetch the group chat with the specified chat_id
+        group_chat = Group.query.filter_by(chat_id=chat_id).first()
+
+        if not group_chat:
+            return jsonify({"message": "Group chat not found"}), 404
+
+        # Convert the group chat to a dictionary
+        group_chat_data = group_chat.to_dict()
+
+        return jsonify({"message": "Group chat fetched successfully", "group_chat": group_chat_data}), 200
+
+    except Exception as e:
+        print(f"Error fetching group chat for chat_id {chat_id}: {e}")
+        return jsonify({"message": "Error fetching group chat", "error": str(e)}), 500
 
 
 @app.route('/app.html')
@@ -953,22 +1036,57 @@ api.add_resource(WithdrawGroupRequest, '/api/wallet/withdraw_group_request')
 
 api.add_resource(CreateContact, '/api/contact')
 
+
 @app.route('/api/user/<int:user_id>/contacts', methods=['GET'])
 def list_user_contacts(user_id):
-    contacts = Contact.query.filter_by(adding_user_id=user_id).order_by(Contact.id).all()
-    return jsonify([contact.to_dict() for contact in contacts])
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Step 1: Contacts this user has added
+    contacts_added = Contact.query.filter(
+        Contact.adding_user_id == user.id,
+        Contact.app_user_id != user.id  # avoid self-referencing
+    ).all()
+
+    # Step 2: The contact record for this user
+    this_contact = Contact.query.filter_by(app_user_id=user.id).first()
+
+    # Step 3: Determine the creator (if not system-added)
+    creator_contact = None
+    if this_contact and this_contact.adding_user_id not in (None, 0, user.id):
+        creator_contact = Contact.query.filter_by(app_user_id=this_contact.adding_user_id).first()
+
+    # Step 4: Combine
+    contacts = contacts_added
+    if creator_contact:
+        contacts.append(creator_contact)
+
+    # Optional: remove duplicates by ID
+    unique_contacts = {c.id: c for c in contacts}.values()
+
+    return jsonify([c.to_dict() for c in unique_contacts]), 200
+
 
 
 @app.route('/api/user/<int:user_id>/contact/<int:contact_id>', methods=['GET'])
 def get_user_contact(user_id, contact_id):
     try:
-        # Fetch the contact for the given user_id and contact_id
-        contact = Contact.query.filter_by(adding_user_id=user_id, id=contact_id).first()
+        contact = Contact.query.get(contact_id)
 
         if not contact:
             return jsonify({"message": "Contact not found"}), 404
 
-        return jsonify({"message": "Contact fetched successfully", "contact": contact.to_dict()}), 200
+        # Direct ownership (user added this contact)
+        if contact.adding_user_id == user_id:
+            return jsonify({"message": "Contact fetched successfully", "contact": contact.to_dict()}), 200
+
+        # Reverse ownership (this contact is the user, and someone added them)
+        if contact.app_user_id == user_id:
+            return jsonify({"message": "Contact fetched successfully", "contact": contact.to_dict()}), 200
+
+        # If neither, it's unrelated
+        return jsonify({"message": "Contact not associated with user"}), 403
 
     except Exception as e:
         print(f"Error fetching contact for user {user_id} and contact {contact_id}: {e}")
@@ -1039,7 +1157,7 @@ def log_transaction():
         db.session.rollback()
         print(f"Error logging transaction: {e}")
         return {"message": "Error logging transaction", "error": str(e)}, 500
-    
+
 
 @app.route('/api/transactions', methods=['GET'])
 def list_transactions():
@@ -1068,6 +1186,132 @@ def index():
     return render_template('app.html')
 
 
+@app.route('/api/wallet/generate', methods=['POST'])
+def generate_wallet_address():
+    """
+    API endpoint to generate a new Ethereum address and associate it with a user.
+    """
+    data = request.get_json()
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return jsonify({"message": "User ID is required"}), 400
+
+    try:
+        # Fetch the user by ID
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        # Generate a new Ethereum address
+        wallet = generate_ethereum_address()
+        if not wallet:
+            return jsonify({"message": "Failed to generate Ethereum address"}), 500
+
+        # Update the user's wallet address
+        user.wallet_address = wallet['address']
+        user.registerd_wallet = True
+
+        # Create a new SingleWalletAccount for the user
+        wallet_account = SingleWalletAccount(
+            user_id=user.id,
+            public_address=wallet['address'],
+            private_key=wallet['private_key'],  # Store encrypted private key
+            balance=0.0  # Initialize with zero balance
+        )
+        db.session.add(wallet_account)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Ethereum address generated and linked to user successfully",
+            "wallet": {
+                "address": wallet['address'],
+                "private_key": wallet['private_key']
+            },
+            "user": user.to_dict()
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in /api/wallet/generate: {e}")
+        return jsonify({
+            "message": "An error occurred while generating the Ethereum address",
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/vesting', methods=['POST'])
+def create_vesting_schedule():
+    data = request.get_json()
+    try:
+        vesting = VestingSchedule(
+            name=data['name'],
+            description=data['description'],
+            token_entry=data['token_entry'],
+            vesting_duration=data['vesting_duration'],
+            yield_percentage=data['yield_percentage'],
+            wallet_account_id=data['wallet_account_id']
+        )
+        db.session.add(vesting)
+        db.session.commit()
+        return {"message": "Vesting schedule created", "vesting_id": vesting.id}, 201
+    except Exception as e:
+        db.session.rollback()
+        return {"message": f"Error creating vesting schedule: {e}"}, 500
+
+
+@app.route('/api/wallet/sign_withdrawal', methods=['POST'])
+def sign_group_withdrawal():
+    data = request.get_json()
+    try:
+        transaction = WalletAccountTransaction(
+            account_id=data['request_id'],
+            account_type='group',
+            transaction_type='signGroupRequest',
+            amount=0  # No amount involved in signing
+        )
+        db.session.add(transaction)
+        db.session.commit()
+        return {"message": "Withdrawal request signed"}, 200
+    except Exception as e:
+        db.session.rollback()
+        return {"message": f"Error signing withdrawal request: {e}"}, 500
+
+@app.route('/api/wallet/send_token', methods=['POST'])
+def send_token():
+    data = request.get_json()
+    try:
+        from_account = SingleWalletAccount.query.get(data['from_account_id'])
+        to_account = SingleWalletAccount.query.get(data['to_account_id'])
+        if from_account and to_account and from_account.balance >= data['amount']:
+            from_account.balance -= data['amount']
+            to_account.balance += data['amount']
+            db.session.commit()
+
+            transaction = WalletAccountTransaction(
+                account_id=from_account.id,
+                account_type='single',
+                transaction_type='send',
+                amount=data['amount']
+            )
+            db.session.add(transaction)
+            db.session.commit()
+            return {"message": "Token sent successfully"}, 200
+        return {"message": "Insufficient balance or invalid accounts"}, 400
+    except Exception as e:
+        db.session.rollback()
+        return {"message": f"Error sending token: {e}"}, 500
+
+
+@app.route('/api/user/<int:user_id>/reciprocal_contacts', methods=['GET'])
+def get_reciprocal_contacts(user_id):
+    try:
+        # Fetch contacts where the user is the app_user_id
+        contacts = Contact.query.filter_by(app_user_id=user_id).all()
+        return jsonify([contact.to_dict() for contact in contacts])
+    except Exception as e:
+        print(f"Error fetching reciprocal contacts for user_id {user_id}: {e}")
+        return jsonify({"error": "Failed to fetch reciprocal contacts"}), 500
 
 # 🟢 Serve Manifest
 @app.route("/manifest.json")

@@ -349,7 +349,6 @@ function is_logged_in() {
     }
 }
 
-
 async function login_user() {
     console.log("Calling login_user...");
 
@@ -391,14 +390,15 @@ async function login_user() {
         localStorage.setItem('userData', encodeData(userData.user));
         console.log("Updated register_data in localStorage:", userData.user);
 
-        // Redirect to the personal profile page or dashboard
-        render_personal_profile();
+        // Delay redirection to ensure session refresh is complete
+        setTimeout(() => {
+            render_personal_profile();
+        }, 1000); // Delay by 1 second
     } catch (error) {
         console.error("Error during login_user:", error);
         alert("An error occurred during login. Please try again later.");
     }
 }
-
 
 
 function uninstall_app() {
@@ -450,9 +450,85 @@ function uninstall_app() {
     location.reload(); // Reload the page to reflect changes
 }
 
+const walletData = {
+    public_address:'',
+    private_address:'',
+    amount:''
+}
 
-function get_user_wallet(){
-    console.log('calling get_user_wallet for information');
+function activate_wallet() {
+    console.log('Calling activate_wallet...');
+
+    // Fetch user data from localStorage
+    const userData = fetch_user_data();
+    if (!userData || !userData.id) {
+        console.error("User data not found or invalid. Cannot activate wallet.");
+        return;
+    }
+
+    // Make a POST request to the backend to generate a wallet
+    fetch('/api/wallet/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_id: userData.id })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Failed to generate wallet: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Wallet generated successfully:", data);
+
+        // Update the user data in memory
+        userData.registerd_wallet = true; // Ensure this is set to true
+        userData.wallet_address = data.wallet.address;
+
+        // Log the updated userData
+        console.log("Updated userData in memory:", userData);
+
+        // Notify the user
+        alert("Wallet activated successfully!");
+
+        // Proceed to render the wallet start page
+        ui_structure.update_personal_profile_data(userData);
+        render_wallet_start();
+    })
+    .catch(error => {
+        console.error("Error activating wallet:", error);
+        alert("Failed to activate wallet. Please try again later.");
+    });
+}
+
+function get_user_wallet() {
+    console.log('Fetching user wallet information...');
+
+    // Fetch wallet data from localStorage
+    const walletData = localStorage.getItem('walletData');
+    if (!walletData) {
+        console.warn("No wallet data found in localStorage.");
+        return null;
+    }
+
+    try {
+        // Parse the wallet data
+        const parsedWalletData = JSON.parse(walletData);
+
+        // Exclude the private key for security
+        const walletInfo = {
+            public_address: parsedWalletData.public_address,
+            amount: parsedWalletData.amount
+        };
+
+        console.log("Fetched wallet information:", walletInfo);
+        return walletInfo;
+    } catch (error) {
+        console.error("Error parsing wallet data:", error);
+        return null;
+    }
 }
 
 function get_my_contacts() {
@@ -473,59 +549,58 @@ function get_my_contacts() {
             return [];
         }
 
-        // Synchronous request to fetch contacts
-        let request = new XMLHttpRequest();
-        request.open("GET", `/api/user/${user_id}/contacts`, false); // Sync request
-        request.send(null);
+        let contacts = [];
 
-        if (request.status !== 200) {
-            console.error("Failed to fetch contacts:", request.statusText);
+        // Step 1: Fetch contacts based on user.id
+        let firstQueryRequest = new XMLHttpRequest();
+        firstQueryRequest.open("GET", `/api/user/${user_id}/contacts`, false); // Sync request
+        firstQueryRequest.send(null);
+
+        if (firstQueryRequest.status !== 200) {
+            console.error("Failed to fetch first query contact:", firstQueryRequest.statusText);
             return [];
         }
 
-        let contacts = JSON.parse(request.responseText);
-        console.log("Fetched contacts:", contacts); // Log the fetched contacts
+        let firstQueryContacts = JSON.parse(firstQueryRequest.responseText);
+        console.log("Fetched first query contacts:", firstQueryContacts);
 
-        // Fetch user details for app_user_id and append as user_dict
+        // Add first query contacts to the list
+        contacts = contacts.concat(firstQueryContacts);
+
+        // Process contacts to include user details and status
         contacts = contacts.map(contact => {
             if (contact.app_user && contact.app_user_id) {
                 try {
-                    let userRequest = new XMLHttpRequest();
-                    userRequest.open("GET", `/api/user/${contact.app_user_id}`, false); // Sync request
-                    userRequest.send(null);
+                    let userDetailsRequest = new XMLHttpRequest();
+                    userDetailsRequest.open("GET", `/api/user/${contact.app_user_id}`, false); // Sync request
+                    userDetailsRequest.send(null);
 
-                    if (userRequest.status === 200) {
-                        let user = JSON.parse(userRequest.responseText);
-                        contact.user_dict = user; // Append user object
+                    if (userDetailsRequest.status === 200) {
+                        let userDetails = JSON.parse(userDetailsRequest.responseText);
+                        contact.user_dict = userDetails; // Append user details
                     } else {
-                        console.warn(`Failed to fetch user for app_user_id: ${contact.app_user_id}`);
-                        contact.user_dict = null; // Set to null if user fetch fails
+                        console.warn(`Failed to fetch user details for app_user_id: ${contact.app_user_id}`);
+                        contact.user_dict = null;
                     }
                 } catch (error) {
-                    console.error(`Error fetching user for app_user_id: ${contact.app_user_id}`, error);
-                    contact.user_dict = null; // Set to null if an error occurs
+                    console.error(`Error fetching user details for app_user_id: ${contact.app_user_id}`, error);
+                    contact.user_dict = null;
                 }
             } else {
-                contact.user_dict = null; // Set to null if app_user_id is not present
+                contact.user_dict = null;
             }
 
             // Determine the status
             let status = "not registered"; // Default status
             if (contact.app_user && contact.user_dict?.last_login) {
-                // Parse last_login as UTC
-                const lastLoginTime = new Date(contact.user_dict.last_login); // UTC timestamp from backend
-                const currentTime = new Date(); // Current time in local timezone
-                const timeDifference = currentTime - lastLoginTime; // Difference in milliseconds
+                const lastLoginTime = new Date(contact.user_dict.last_login);
+                const currentTime = new Date();
+                const timeDifference = currentTime - lastLoginTime;
                 const twoMinutesInMilliseconds = 2 * 60 * 1000;
-
-                console.log("Last login time (UTC):", lastLoginTime.toUTCString()); // Log the last login time in UTC
-                console.log("Current time (Local):", currentTime); // Log the current time
-                console.log("Time difference (ms):", timeDifference); // Log the time difference
 
                 if (timeDifference <= twoMinutesInMilliseconds) {
                     status = "online";
                 } else {
-                    // Format last_seen as a readable timestamp
                     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
                     status = `last seen: ${lastLoginTime.toLocaleString(undefined, options)}`;
                 }
@@ -535,10 +610,9 @@ function get_my_contacts() {
                 item_type: "list_item_contact",
                 label: contact.contact_name,
                 id: contact.id,
-                status: status, // Computed status
-                user_dict: contact.user_dict // Append user_dict
+                status: status,
+                user_dict: contact.user_dict
             };
-            
         });
 
         console.log("Processed contacts with user_dict and status:", contacts);
@@ -618,7 +692,7 @@ function update_resource_selection_data(data) {
     }
     try {
         let parsedData = JSON.parse(resourceSelectionData); 
-        // update using array appenging
+        // update using array appending
         parsedData.selected_data.push(data);
         // Save the updated data back to localStorage
         localStorage.setItem('resource_selection_data', encodeData(parsedData));
@@ -749,6 +823,8 @@ function get_my_chats() {
         chats = chats.map(chat => {
             let chatDetails = {
                 item_type: "list_item_chat",
+                chat_type: chat.chat_type,
+                chat_member_ids: [], // Initialize as an empty array
                 label: "",
                 last_message: "Tap to open chat", // Placeholder text
                 notification_badge: 2, // Placeholder for unread count
@@ -759,56 +835,75 @@ function get_my_chats() {
             };
 
             if (chat.chat_type === "single") {
-                // Fetch user details for single chat
+                // Fetch chat members for single chat
                 try {
-                    let userRequest = new XMLHttpRequest();
-                    userRequest.open("GET", `/api/user/${chat.creator_id}`, false); // Sync request
-                    userRequest.send(null);
+                    let memberRequest = new XMLHttpRequest();
+                    memberRequest.open("GET", `/api/chat/${chat.id}/members`, false); // Sync request
+                    memberRequest.send(null);
 
-                    if (userRequest.status === 200) {
-                        let user = JSON.parse(userRequest.responseText);
-                        chatDetails.user_dict = user; // Append user object
-                        chatDetails.label = user.username; // Use username as label
+                    if (memberRequest.status === 200) {
+                        let members = JSON.parse(memberRequest.responseText).members;
 
-                        // Determine user status
-                        if (user.last_login) {
-                            const lastLoginTime = new Date(user.last_login);
-                            const currentTime = new Date();
-                            const timeDifference = currentTime - lastLoginTime;
-                            const twoMinutesInMilliseconds = 2 * 60 * 1000;
+                        if (members.length === 1) {
+                            const member = members[0]; // Single chat should have one member
+                            const memberUserId = member.user_id;
 
-                            if (timeDifference <= twoMinutesInMilliseconds) {
-                                chatDetails.status = "online";
+                            // Append the single member's user_id to chat_member_ids
+                            chatDetails.chat_member_ids.push(memberUserId);
+
+                            // Fetch user details for the member
+                            let userRequest = new XMLHttpRequest();
+                            userRequest.open("GET", `/api/user/${memberUserId}`, false); // Sync request
+                            userRequest.send(null);
+
+                            if (userRequest.status === 200) {
+                                let user = JSON.parse(userRequest.responseText);
+                                chatDetails.user_dict = user; // Append user object
+                                chatDetails.label = user.username; // Use username as label
                             } else {
-                                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-                                chatDetails.status = `last seen: ${lastLoginTime.toLocaleString(undefined, options)}`;
+                                console.warn(`Failed to fetch user for chat member user_id: ${memberUserId}`);
                             }
                         } else {
-                            chatDetails.status = "not registered";
+                            console.warn(`Unexpected number of members for single chat ${chat.id}:`, members.length);
                         }
                     } else {
-                        console.warn(`Failed to fetch user for chat creator_id: ${chat.creator_id}`);
+                        console.warn(`Failed to fetch members for chat_id: ${chat.id}`);
                     }
                 } catch (error) {
-                    console.error(`Error fetching user for chat creator_id: ${chat.creator_id}`, error);
+                    console.error(`Error fetching members for chat_id: ${chat.id}`, error);
                 }
             } else if (chat.chat_type === "group") {
-                // Fetch group details for group chat
+                // Fetch chat members for group chat
                 try {
-                    let groupRequest = new XMLHttpRequest();
-                    groupRequest.open("GET", `/api/group/${chat.id}`, false); // Sync request
-                    groupRequest.send(null);
+                    let memberRequest = new XMLHttpRequest();
+                    memberRequest.open("GET", `/api/chat/${chat.id}/members`, false); // Sync request
+                    memberRequest.send(null);
 
-                    if (groupRequest.status === 200) {
-                        let group = JSON.parse(groupRequest.responseText);
-                        chatDetails.group_dict = group; // Append group object
-                        chatDetails.label = group.name; // Use group name as label
-                        chatDetails.status = "group chat"; // Set status for group chats
+                    if (memberRequest.status === 200) {
+                        let members = JSON.parse(memberRequest.responseText).members;
+
+                        // Append all member user_ids to chat_member_ids
+                        chatDetails.chat_member_ids = members.map(member => member.user_id);
+
+                        // Fetch group details for the group chat
+                        let groupRequest = new XMLHttpRequest();
+                        groupRequest.open("GET", `/api/chat/${chat.id}/group`, false); // Sync request
+                        groupRequest.send(null);
+
+                        if (groupRequest.status === 200) {
+                            let response = JSON.parse(groupRequest.responseText);
+                            let group = response.group_chat; // Extract the group_chat data from the response
+                            chatDetails.group_dict = group; // Append group object
+                            chatDetails.label = group.name; // Use group name as label
+                            chatDetails.status = "group chat"; // Set status for group chats
+                        } else {
+                            console.warn(`Failed to fetch group for chat_id: ${chat.id}`);
+                        }
                     } else {
-                        console.warn(`Failed to fetch group for chat_id: ${chat.id}`);
+                        console.warn(`Failed to fetch members for chat_id: ${chat.id}`);
                     }
                 } catch (error) {
-                    console.error(`Error fetching group for chat_id: ${chat.id}`, error);
+                    console.error(`Error fetching members for chat_id: ${chat.id}`, error);
                 }
             }
 
@@ -845,7 +940,7 @@ function update_create_chat_data(data){
     }
     try {
         let parsedData = JSON.parse(createChatPageData); 
-        // update using array appenging
+        // update using array appending
         parsedData.selected_data.push(data);
         // Save the updated data back to localStorage
         localStorage.setItem('create_chat_page_data', encodeData(parsedData));
@@ -861,11 +956,113 @@ function clear_create_chat_data(){
     console.log("create_chat_page_data cleared from localStorage");
 }
 
+const chat_pad_data = {
+    chat_id: null,
+    chat_type: null,
+    chat_member_ids: [],
+    messages: [],
+    last_message: null,
+    last_message_time: null,
+    last_message_sender: null,
+    last_message_type: null,
+    last_message_status: null
+}
+
+function load_chat_pad(chat_id, chat_type, chat_member_ids){
+    console.log("Loading chat pad data for chat_id:", chat_id);
+    chat_pad_data.chat_id = chat_id;
+    chat_pad_data.chat_type = chat_type;
+    chat_pad_data.chat_member_ids = chat_member_ids;
+    chat_pad_data.messages = [];
+    chat_pad_data.last_message = null;
+    chat_pad_data.last_message_time = null;
+    chat_pad_data.last_message_sender = null;
+    chat_pad_data.last_message_type = null;
+    chat_pad_data.last_message_status = null;
+
+    data = encodeData(chat_pad_data);
+    localStorage.setItem('chat_pad_data', data);
+    
+    console.log("Chat pad data loaded:", data);
+}
+
+function fetch_chat_messages(chat_id){
+
+}
+
+function poll_new_chat_messages(chat_id){
+    console.log("Polling for ne chat messages")
+}
 
 
+function process_chat_profile(event) {
+    console.log("Processing chat profile...");
 
+    // Access the chat_pad_data from localStorage
+    const chatPadData = JSON.parse(localStorage.getItem('chat_pad_data'));
+    if (!chatPadData) {
+        console.error("No chat_pad_data found in localStorage.");
+        return;
+    }
 
+    const { chat_id, chat_type, chat_member_ids } = chatPadData;
 
+    console.log(`Chat ID: ${chat_id}, Chat Type: ${chat_type}, Chat Member IDs: ${chat_member_ids}`);
+
+    if (!chat_id || !chat_type) {
+        console.error("Invalid chat_pad_data: Missing chat_id or chat_type.");
+        return;
+    }
+
+    if (chat_type === "single") {
+        // Handle single chat
+        if (chat_member_ids.length === 1) {
+            const memberId = chat_member_ids[0];
+            console.log(`Fetching profile for single chat member with ID: ${memberId}`);
+
+            // Fetch user profile for the single chat member
+            fetch(`/api/user/${memberId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch user profile for member ID: ${memberId}`);
+                    }
+                    return response.json();
+                })
+                .then(userData => {
+                    console.log("Fetched user profile:", userData);
+                    // Render the other profile page with the fetched user data
+                    render_other_profile(userData.id);
+                })
+                .catch(error => {
+                    console.error("Error fetching user profile:", error);
+                });
+        } else {
+            console.error("Unexpected number of members for single chat:", chat_member_ids.length);
+        }
+    } else if (chat_type === "group") {
+        // Handle group chat
+        console.log(`Fetching profile for group chat with ID: ${chat_id}`);
+
+        // Fetch group profile for the group chat
+        fetch(`/api/chat/${chat_id}/group`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch group profile for chat ID: ${chat_id}`);
+                }
+                return response.json();
+            })
+            .then(groupData => {
+                console.log("Fetched group profile:", groupData);
+                // Render the group profile page with the fetched group data
+                render_group_profile(chat_id);
+            })
+            .catch(error => {
+                console.error("Error fetching group profile:", error);
+            });
+    } else {
+        console.error(`Unknown chat type: ${chat_type}`);
+    }
+}
 
 
 
