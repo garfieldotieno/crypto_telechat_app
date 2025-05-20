@@ -480,7 +480,7 @@ function activate_wallet() {
         }
         return response.json();
     })
-    .then(data => {
+    .then(async (data) => {
         console.log("Wallet generated successfully:", data);
 
         // Update the user data in memory
@@ -489,12 +489,15 @@ function activate_wallet() {
 
         // Log the updated userData
         console.log("Updated userData in memory:", userData);
+        update_user_data(userData);
 
         // Notify the user
         alert("Wallet activated successfully!");
 
+        // Wait for wallet data to be updated before rendering
+        await ui_structure.update_wallet_data();
+
         // Proceed to render the wallet start page
-        ui_structure.update_personal_profile_data(userData);
         render_wallet_start();
     })
     .catch(error => {
@@ -507,26 +510,61 @@ function get_user_wallet() {
     console.log('Fetching user wallet information...');
 
     // Fetch wallet data from localStorage
-    const walletData = localStorage.getItem('walletData');
-    if (!walletData) {
-        console.warn("No wallet data found in localStorage.");
+    let walletData = localStorage.getItem('walletData');
+    if (walletData) {
+        try {
+            // Parse the wallet data
+            const parsedWalletData = JSON.parse(walletData);
+
+            // Exclude the private key for security
+            const walletInfo = {
+                public_address: parsedWalletData.public_address,
+                amount: parsedWalletData.amount
+            };
+
+            console.log("Fetched wallet information from localStorage:", walletInfo);
+            return walletInfo;
+        } catch (error) {
+            console.error("Error parsing wallet data from localStorage:", error);
+        }
+    }
+
+    // If wallet data is not found in localStorage, fetch it from the backend
+    console.log("Wallet data not found in localStorage. Fetching from backend...");
+    const userData = fetch_user_data();
+    if (!userData || !userData.id) {
+        console.error("User data not found or invalid. Cannot fetch wallet data.");
         return null;
     }
 
     try {
-        // Parse the wallet data
-        const parsedWalletData = JSON.parse(walletData);
+        // Fetch wallet data from the backend
+        const response = fetch(`/api/wallet/${userData.id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch wallet data: ${response.statusText}`);
+        }
+
+        const walletDataFromBackend = response.json();
+        console.log("Fetched wallet information from backend:", walletDataFromBackend);
+
+        // Save the wallet data to localStorage for future use
+        localStorage.setItem('walletData', JSON.stringify(walletDataFromBackend));
 
         // Exclude the private key for security
         const walletInfo = {
-            public_address: parsedWalletData.public_address,
-            amount: parsedWalletData.amount
+            public_address: walletDataFromBackend.public_address,
+            amount: walletDataFromBackend.amount
         };
 
-        console.log("Fetched wallet information:", walletInfo);
         return walletInfo;
     } catch (error) {
-        console.error("Error parsing wallet data:", error);
+        console.error("Error fetching wallet data from backend:", error);
         return null;
     }
 }
@@ -986,84 +1024,418 @@ function load_chat_pad(chat_id, chat_type, chat_member_ids){
     console.log("Chat pad data loaded:", data);
 }
 
-function fetch_chat_messages(chat_id){
+function fetch_chat_messages(chat_id) {
+    console.log(`Fetching messages for chat_id: ${chat_id}...`);
 
+    return fetch(`/api/chat/${chat_id}/messages`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Failed to fetch messages for chat_id: ${chat_id}. Status: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Fetched messages:", data);
+
+        // Update the chat_pad_data with the fetched messages
+        const chatPadData = JSON.parse(localStorage.getItem('chat_pad_data')) || {};
+        chatPadData.messages = data.messages || [];
+        localStorage.setItem('chat_pad_data', JSON.stringify(chatPadData));
+
+        console.log("Updated chat_pad_data with messages:", chatPadData);
+    })
+    .catch(error => {
+        console.error(`Error fetching messages for chat_id: ${chat_id}:`, error);
+    });
 }
 
-function poll_new_chat_messages(chat_id){
-    console.log("Polling for ne chat messages")
+let pollingInterval = null; // Global variable to store the interval reference
+
+function poll_new_chat_messages() {
+    console.log("Starting polling for new chat messages...");
+
+    // Retrieve the current chatPadData from localStorage
+    const chatPadData = JSON.parse(localStorage.getItem("chat_pad_data"));
+    if (!chatPadData || !chatPadData.chat_id) {
+        console.error("No valid chatPadData found in localStorage. Polling stopped.");
+        return;
+    }
+
+    const { chat_id } = chatPadData;
+
+    // Function to fetch and update messages
+    async function fetchAndUpdateMessages() {
+        try {
+            console.log(`Polling for new messages in chat_id: ${chat_id}...`);
+
+            // Fetch the latest messages for the chat
+            const response = await fetch(`/api/chat/${chat_id}/messages`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch messages for chat_id: ${chat_id}. Status: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log("Fetched new messages:", data);
+
+            // Update the chatPadData with the fetched messages
+            const updatedChatPadData = JSON.parse(localStorage.getItem("chat_pad_data")) || {};
+            updatedChatPadData.messages = data.messages || [];
+            localStorage.setItem("chat_pad_data", JSON.stringify(updatedChatPadData));
+
+            // Update the UI with the latest messages
+            const middleSection = document.querySelector(".middle_section");
+            if (middleSection) {
+                middleSection.innerHTML = ""; // Clear the current messages
+
+                updatedChatPadData.messages.forEach(message => {
+                    const messageElement = document.createElement("div");
+                    messageElement.classList.add("message_item");
+
+                    // Determine if the message is from the current user or another user
+                    const isOwner = message.user_id === parseInt(chatPadData.chat_member_ids[0]);
+                    messageElement.classList.add(isOwner ? "message_owner" : "message_recipient");
+
+                    messageElement.innerHTML = `
+                        <div class="message_content">${message.content}</div>
+                        <div class="message_timestamp">${new Date(message.timestamp).toLocaleTimeString()}</div>
+                    `;
+
+                    middleSection.appendChild(messageElement);
+                });
+
+                // Scroll to the bottom of the chat
+                middleSection.scrollTop = middleSection.scrollHeight;
+            }
+        } catch (error) {
+            console.error("Error polling for new messages:", error);
+        }
+    }
+
+    // Clear any existing interval to avoid duplicates
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+    }
+
+    // Set an interval to poll for new messages every 100ms
+    pollingInterval = setInterval(fetchAndUpdateMessages, 100);
 }
+
+function stopPollingMessages() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+        console.log("Polling for new chat messages stopped.");
+    }
+}
+
 
 
 function process_chat_profile(event) {
     console.log("Processing chat profile...");
+    stopPollingMessages()
 
-    // Access the chat_pad_data from localStorage
-    const chatPadData = JSON.parse(localStorage.getItem('chat_pad_data'));
-    if (!chatPadData) {
-        console.error("No chat_pad_data found in localStorage.");
+    // Retrieve the current chatPadData from localStorage
+    const chatPadData = JSON.parse(localStorage.getItem("chat_pad_data"));
+    if (!chatPadData || !chatPadData.chat_id) {
+        console.error("No valid chatPadData found in localStorage.");
         return;
     }
 
-    const { chat_id, chat_type, chat_member_ids } = chatPadData;
+    const { chat_id, chat_type, chat_member_ids, group_id } = chatPadData;
 
-    console.log(`Chat ID: ${chat_id}, Chat Type: ${chat_type}, Chat Member IDs: ${chat_member_ids}`);
+    if (chat_type === "group") {
+        console.log(`Rendering group profile for chat_id: ${chat_id}`);
+        render_group_profile(group_id); // Render the group profile page
+    } else if (chat_type === "single") {
+        // Retrieve the other user's ID from chat_member_ids[0]
+        const otherUserId = parseInt(chat_member_ids[0]); // Convert to integer
 
-    if (!chat_id || !chat_type) {
-        console.error("Invalid chat_pad_data: Missing chat_id or chat_type.");
-        return;
-    }
-
-    if (chat_type === "single") {
-        // Handle single chat
-        if (chat_member_ids.length === 1) {
-            const memberId = chat_member_ids[0];
-            console.log(`Fetching profile for single chat member with ID: ${memberId}`);
-
-            // Fetch user profile for the single chat member
-            fetch(`/api/user/${memberId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch user profile for member ID: ${memberId}`);
-                    }
-                    return response.json();
-                })
-                .then(userData => {
-                    console.log("Fetched user profile:", userData);
-                    // Render the other profile page with the fetched user data
-                    render_other_profile(userData.id);
-                })
-                .catch(error => {
-                    console.error("Error fetching user profile:", error);
-                });
+        if (otherUserId) {
+            console.log(`Rendering other profile for user_id: ${otherUserId}`);
+            render_other_profile(otherUserId); // Render the other user's profile page
         } else {
-            console.error("Unexpected number of members for single chat:", chat_member_ids.length);
+            console.error("Unable to determine the other user's ID in the single chat.");
         }
-    } else if (chat_type === "group") {
-        // Handle group chat
-        console.log(`Fetching profile for group chat with ID: ${chat_id}`);
-
-        // Fetch group profile for the group chat
-        fetch(`/api/chat/${chat_id}/group`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch group profile for chat ID: ${chat_id}`);
-                }
-                return response.json();
-            })
-            .then(groupData => {
-                console.log("Fetched group profile:", groupData);
-                // Render the group profile page with the fetched group data
-                render_group_profile(chat_id);
-            })
-            .catch(error => {
-                console.error("Error fetching group profile:", error);
-            });
     } else {
         console.error(`Unknown chat type: ${chat_type}`);
     }
 }
 
+function update_current_personal_profile() {
+    console.log("Calling update_current_personal_profile...");
+
+    // Create a modal container
+    const modal = document.createElement("div");
+    modal.style.position = "fixed";
+    modal.style.top = "50%";
+    modal.style.left = "50%";
+    modal.style.transform = "translate(-50%, -50%)";
+    modal.style.width = "300px";
+    modal.style.padding = "20px";
+    modal.style.backgroundColor = "#232D3B";
+    modal.style.color = "#A1B6C3";
+    modal.style.borderRadius = "10px";
+    modal.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)";
+    modal.style.zIndex = "1000";
+    modal.style.textAlign = "center";
+
+    // Add a title
+    const title = document.createElement("h3");
+    title.textContent = "Update Personal Profile";
+    title.style.marginBottom = "20px";
+    modal.appendChild(title);
+
+    // Create a button stack
+    const buttonStack = document.createElement("div");
+    buttonStack.style.display = "flex";
+    buttonStack.style.flexDirection = "column";
+    buttonStack.style.gap = "10px";
+
+    // Create the "Background" button
+    const backgroundButton = document.createElement("button");
+    backgroundButton.textContent = "Background";
+    backgroundButton.style.padding = "10px";
+    backgroundButton.style.border = "none";
+    backgroundButton.style.borderRadius = "5px";
+    backgroundButton.style.backgroundColor = "#3C5E72";
+    backgroundButton.style.color = "#FFFFFF";
+    backgroundButton.style.cursor = "pointer";
+    backgroundButton.onclick = () => handleFileUpload("profile_image", false);
+    buttonStack.appendChild(backgroundButton);
+
+    // Create the "Profile" button
+    const profileButton = document.createElement("button");
+    profileButton.textContent = "Profile";
+    profileButton.style.padding = "10px";
+    profileButton.style.border = "none";
+    profileButton.style.borderRadius = "5px";
+    profileButton.style.backgroundColor = "#3C5E72";
+    profileButton.style.color = "#FFFFFF";
+    profileButton.style.cursor = "pointer";
+    profileButton.onclick = () => handleFileUpload("wall_image", false);
+    buttonStack.appendChild(profileButton);
+
+    // Add the button stack to the modal
+    modal.appendChild(buttonStack);
+
+    // Add a close button
+    const closeButton = document.createElement("button");
+    closeButton.textContent = "Close";
+    closeButton.style.marginTop = "20px";
+    closeButton.style.padding = "10px";
+    closeButton.style.border = "none";
+    closeButton.style.borderRadius = "5px";
+    closeButton.style.backgroundColor = "#E74C3C";
+    closeButton.style.color = "#FFFFFF";
+    closeButton.style.cursor = "pointer";
+    closeButton.onclick = () => document.body.removeChild(modal);
+    modal.appendChild(closeButton);
+
+    // Append the modal to the body
+    document.body.appendChild(modal);
+}
+
+function update_current_group_profile() {
+    console.log("Calling update_current_group_profile...");
+
+    // Access chat_pad_data from localStorage
+    const chatPadData = JSON.parse(localStorage.getItem("chat_pad_data"));
+    if (!chatPadData) {
+        console.error("No chat_pad_data found in localStorage.");
+        return;
+    }
+
+    const { chat_id, chat_type } = chatPadData;
+
+    if (chat_type !== "group") {
+        console.error("Invalid chat type. This function is only for group profiles.");
+        return;
+    }
+
+    // Create a modal container
+    const modal = document.createElement("div");
+    modal.style.position = "fixed";
+    modal.style.top = "50%";
+    modal.style.left = "50%";
+    modal.style.transform = "translate(-50%, -50%)";
+    modal.style.width = "300px";
+    modal.style.padding = "20px";
+    modal.style.backgroundColor = "#232D3B";
+    modal.style.color = "#A1B6C3";
+    modal.style.borderRadius = "10px";
+    modal.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)";
+    modal.style.zIndex = "1000";
+    modal.style.textAlign = "center";
+
+    // Add a title
+    const title = document.createElement("h3");
+    title.textContent = "Update Group Profile";
+    title.style.marginBottom = "20px";
+    modal.appendChild(title);
+
+    // Create a button stack
+    const buttonStack = document.createElement("div");
+    buttonStack.style.display = "flex";
+    buttonStack.style.flexDirection = "column";
+    buttonStack.style.gap = "10px";
+
+    // Create the "Background" button
+    const backgroundButton = document.createElement("button");
+    backgroundButton.textContent = "Background";
+    backgroundButton.style.padding = "10px";
+    backgroundButton.style.border = "none";
+    backgroundButton.style.borderRadius = "5px";
+    backgroundButton.style.backgroundColor = "#3C5E72";
+    backgroundButton.style.color = "#FFFFFF";
+    backgroundButton.style.cursor = "pointer";
+    backgroundButton.onclick = () => handleFileUpload("profile_image", true);
+    buttonStack.appendChild(backgroundButton);
+
+    // Create the "Profile" button
+    const profileButton = document.createElement("button");
+    profileButton.textContent = "Profile";
+    profileButton.style.padding = "10px";
+    profileButton.style.border = "none";
+    profileButton.style.borderRadius = "5px";
+    profileButton.style.backgroundColor = "#3C5E72";
+    profileButton.style.color = "#FFFFFF";
+    profileButton.style.cursor = "pointer";
+    profileButton.onclick = () => handleFileUpload("wall_image", true);
+    buttonStack.appendChild(profileButton);
+
+    // Add the button stack to the modal
+    modal.appendChild(buttonStack);
+
+    // Add a close button
+    const closeButton = document.createElement("button");
+    closeButton.textContent = "Close";
+    closeButton.style.marginTop = "20px";
+    closeButton.style.padding = "10px";
+    closeButton.style.border = "none";
+    closeButton.style.borderRadius = "5px";
+    closeButton.style.backgroundColor = "#E74C3C";
+    closeButton.style.color = "#FFFFFF";
+    closeButton.style.cursor = "pointer";
+    closeButton.onclick = () => document.body.removeChild(modal);
+    modal.appendChild(closeButton);
+
+    // Append the modal to the body
+    document.body.appendChild(modal);
+}
 
 
+function handleFileUpload(fieldName, isGroup = false) {
+    console.log(`Uploading file for ${fieldName}...`);
 
+    // Create a hidden file input
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*"; // Accept only image files
+    fileInput.style.display = "none";
+
+    // Trigger file selection
+    fileInput.onchange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+            console.warn("No file selected.");
+            return;
+        }
+
+        console.log(`Selected file: ${file.name}`);
+
+        const formData = new FormData();
+        formData.append(fieldName, file);
+
+        let endpoint;
+        let group_id = null;
+        let chatPadData = null;
+
+        if (isGroup) {
+            console.log("Handling group profile update...");
+            chatPadData = JSON.parse(localStorage.getItem("chat_pad_data"));
+            console.log("Retrieved chatPadData:", chatPadData);
+
+            if (!chatPadData || chatPadData.chat_type !== "group" || !chatPadData.group_id) {
+                console.error("Invalid or missing chatPadData for group profile.");
+                return;
+            }
+
+            group_id = chatPadData.group_id;
+            console.log(`Group group_id: ${group_id}`);
+            endpoint = `/api/group/${group_id}`;
+        } else {
+            console.log("Handling personal profile update...");
+            const userData = JSON.parse(localStorage.getItem("userData"));
+            console.log("Retrieved userData:", userData);
+
+            if (!userData || !userData.id) {
+                console.error("Invalid or missing userData for personal profile.");
+                return;
+            }
+
+            const { id: user_id } = userData;
+            console.log(`User ID: ${user_id}`);
+            endpoint = `/api/user/${user_id}`;
+        }
+
+        try {
+            console.log(`Sending file to endpoint: ${endpoint}`);
+            const response = await fetch(endpoint, {
+                method: "PUT",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to upload ${fieldName}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log(`${fieldName} updated successfully:`, result);
+
+            alert(`${fieldName === "profile_image" ? "Background" : "Profile"} updated successfully!`);
+
+            // Update the UI structure and re-render the profile page
+            if (isGroup) {
+                console.log("Updating group profile UI...");
+
+                try {
+                    const updatedGroupData = await fetch(`/api/group/${group_id}`);
+                    if (!updatedGroupData.ok) {
+                        throw new Error(`Failed to fetch group data. Status: ${updatedGroupData.status}`);
+                    }
+                    const groupResult = await updatedGroupData.json();
+                    console.log("Fetched updated group data:", groupResult);
+
+                    localStorage.setItem("group_profile_page", JSON.stringify(groupResult.group_chat));
+
+                } catch (fetchError) {
+                    console.error("Error fetching updated group data:", fetchError);
+                }
+
+                console.log("Re-rendering group profile...");
+                render_group_profile(group_id);
+            } else {
+                console.log("Updating personal profile UI...");
+                await ui_structure.update_personal_profile_data();
+                console.log("Re-rendering personal profile...");
+                render_personal_profile();
+            }
+        } catch (error) {
+            console.error(`Error uploading ${fieldName}:`, error);
+            alert(`Failed to update ${fieldName}. Please try again.`);
+        }
+    };
+
+    fileInput.click();
+}

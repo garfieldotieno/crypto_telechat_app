@@ -70,12 +70,11 @@ function create_middle_section(items) {
     let section = document.createElement("div");
     section.classList.add("middle_section");
 
-    section.style.display = "flex";
-    section.style.flexDirection = "column";
+    
     section.style.alignItems = "center";
     section.style.justifyContent = "flex-start";
-    section.style.gap = "10px";
-    section.style.padding = "10px";
+    
+    
 
     items.forEach(item => {
         if (!item.visible) return;
@@ -1349,7 +1348,7 @@ function render_new_chat_group() {
 
     // Render the top section for create_page
     let createPageConfig = ui_structure.top_section.create_page;
-    if (createPageConfig && createPageConfig.some(item => item.visible)) {
+    if (createPageConfig && createPageConfig.some( item => item.visible)) {
         centerContainer.appendChild(create_top_section(createPageConfig));
     }
 
@@ -1457,26 +1456,74 @@ function render_new_chat_group() {
 }
 
 
-
 function render_chat_messages(event) {
     console.log("Rendering chat messages interface...");
 
-    // Extract the chat_id from the clicked element's data-chat-id attribute
     const chat_id = event.currentTarget.getAttribute("data-chat-id");
-    const chat_type = event.currentTarget.getAttribute("data-chat-type"); // Access chat type
-    const chat_member_ids = event.currentTarget.getAttribute("data-chat-member-ids"); // Access chat member IDs
+    const chat_type = event.currentTarget.getAttribute("data-chat-type");
+    const chat_member_ids = event.currentTarget.getAttribute("data-chat-member-ids");
 
     console.log(`Chat ID: ${chat_id}, Chat Type: ${chat_type}, Chat Member IDs: ${chat_member_ids}`);
-
-    console.log(`Chat ID extracted: ${chat_id}`);
 
     if (!chat_id) {
         console.error("No chat_id found on the clicked element.");
         return;
     }
 
-    // Load chat pad or perform any necessary setup
-    load_chat_pad(chat_id, chat_type, chat_member_ids);
+    // Initialize chatPadData
+    const chatPadData = {
+        chat_id,
+        chat_type,
+        chat_member_ids: chat_member_ids ? chat_member_ids.split(",") : [],
+        group_id: null // Default to null
+    };
+
+    // If the chat type is "group", fetch the group_id
+    if (chat_type === "group") {
+        console.log('showing group chats')
+        fetch(`/api/chat/${chat_id}/group`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch group details for chat ID: ${chat_id}`);
+                }
+                return response.json();
+            })
+            .then(groupData => {
+                console.log("Fetched group data:", groupData);
+
+                // Ensure group_id is correctly extracted from groupData
+                if (groupData && groupData.group_chat.id) {
+                    chatPadData.group_id = groupData.group_chat.id;
+                    console.log(`new chatPadData is ${chatPadData}`)
+                } else {
+                    console.warn("groupData does not contain a valid group_id.");
+                }
+
+                // Store updated chatPadData in localStorage
+                localStorage.setItem("chat_pad_data", JSON.stringify(chatPadData));
+                console.log("Updated chatPadData stored in localStorage:", chatPadData);
+
+                // Proceed with rendering the chat messages
+                renderChatUI(chatPadData);
+            })
+            .catch(error => {
+                console.error("Error fetching group details:", error);
+            });
+    } else {
+        console.log('showing single chat messages');
+
+        // For non-group chats, store chatPadData directly
+        localStorage.setItem("chat_pad_data", JSON.stringify(chatPadData));
+        console.log("chatPadData stored in localStorage:", chatPadData);
+
+        // Proceed with rendering the chat messages
+        renderChatUI(chatPadData);
+        poll_new_chat_messages();
+    }
+}
+
+async function renderChatUI(chatPadData) {
+    console.log("Rendering chat UI...");
 
     // Clear previous content
     document.body.innerHTML = "";
@@ -1500,25 +1547,148 @@ function render_chat_messages(event) {
         centerContainer.appendChild(create_top_section(topSectionConfig));
     }
 
+    // Add a back button action
+    const backButton = document.querySelector(".top_section .left_content");
+    if (backButton) {
+        backButton.onclick = () => {
+            stopPollingMessages(); // Stop polling when navigating back
+            render_chat_listing("normal"); // Navigate back to the chat listing
+        };
+    }
+
     // Render middle section
-    let middleSectionConfig = ui_structure.middle_section.chat_message_page;
-    if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
-        let middleSection = create_middle_section(middleSectionConfig);
-        centerContainer.appendChild(middleSection);
-    } else {
-        // Add a placeholder for blank messages
-        let middleSection = document.createElement("div");
-        middleSection.classList.add("middle_section");
-        middleSection.innerHTML = `<div class="empty_message_placeholder">No messages yet</div>`;
-        centerContainer.appendChild(middleSection);
+    let middleSection = document.createElement("div");
+    middleSection.classList.add("middle_section");
+    centerContainer.appendChild(middleSection);
+
+    try {
+        // Fetch messages for the chat
+        const chat_id = chatPadData.chat_id;
+        console.log(`Fetching messages for chat_id: ${chat_id}...`);
+        await fetch_chat_messages(chat_id);
+
+        // Retrieve updated chatPadData from localStorage
+        const updatedChatPadData = JSON.parse(localStorage.getItem('chat_pad_data')) || {};
+        const messages = updatedChatPadData.messages || [];
+        const userData = decodeData(localStorage.getItem('userData'));
+
+        console.log("Messages to render:", messages);
+
+        // Render messages in the middle section
+        messages.forEach(message => {
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("message_item");
+
+            // Determine if the message is from the current user or another user
+            const isOwner = message.user_id === userData.id; 
+            // const isRecipient = chatPadData.chat_member_ids.includes(String(message.user_id));
+
+            // if (isOwner) {
+            //     messageElement.classList.add("message_owner"); // Align to the right for the chat creator
+            // } else if (isRecipient) {
+            //     messageElement.classList.add("message_recipient"); // Align to the left for other chat members
+            // } else {
+            //     console.warn(`Message user_id ${message.user_id} does not match any known user in the chat.`);
+            // }
+
+            if (isOwner) {
+                messageElement.classList.add("message_owner"); // Align to the right for the chat creator
+            }
+            else{
+                messageElement.classList.add("message_recipient"); // Align to the left for other chat members
+            }
+
+            messageElement.innerHTML = `
+                <div class="message_content">${message.content}</div>
+                <div class="message_timestamp">${new Date(message.timestamp).toLocaleTimeString()}</div>
+            `;
+
+            middleSection.appendChild(messageElement);
+        });
+
+        // Scroll to bottom after messages are rendered
+        setTimeout(() => {
+            middleSection.scrollTop = middleSection.scrollHeight;
+            console.log("Scrolled to bottom of messages.");
+        }, 0);
+    } catch (error) {
+        console.error("Error fetching or rendering messages:", error);
     }
 
     // Render bottom section
-    let bottomSectionConfig = ui_structure.bottom_section.create_message_page;
-    if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
-        let bottomSection = create_bottom_section(bottomSectionConfig);
-        centerContainer.appendChild(bottomSection);
-    }
+    let bottomSection = document.createElement("div");
+    bottomSection.classList.add("horizontal_stack");
+
+    // Input field for message content
+    let inputField = document.createElement("input");
+    inputField.type = "text";
+    inputField.placeholder = "Write a message...";
+    inputField.classList.add("input");
+    bottomSection.appendChild(inputField);
+
+    // Send button
+    let sendButton = document.createElement("div");
+    sendButton.classList.add("icon");
+    sendButton.innerHTML = `<i class="fa-solid fa-paper-plane"></i>`;
+
+    // Function to handle sending messages
+    const sendMessage = async () => {
+        const content = inputField.value.trim();
+        if (!content) {
+            alert("Message cannot be empty!");
+            return;
+        }
+
+        try {
+            // Determine the endpoint based on chat type
+            const endpoint = chatPadData.chat_type === "group"
+                ? "/api/chat/group/message"
+                : "/api/chat/single/message";
+
+            // Post the message to the backend
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    user_id: parseInt(chatPadData.chat_member_ids[0]), // Assuming the first ID is the sender
+                    chat_id: chatPadData.chat_id,
+                    content: content
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to send message: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log("Message sent successfully:", result);
+
+            // Clear the input field
+            inputField.value = "";
+
+            // Refresh the chat messages
+            await fetch_chat_messages(chatPadData.chat_id);
+            renderChatUI(chatPadData);
+        } catch (error) {
+            console.error("Error sending message:", error);
+            alert("Failed to send message. Please try again.");
+        }
+    };
+
+    // Attach click event to the send button
+    sendButton.onclick = sendMessage;
+
+    // Attach keydown event to the input field to listen for the Enter key
+    inputField.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
+
+    bottomSection.appendChild(sendButton);
+    centerContainer.appendChild(bottomSection);
 }
 
 

@@ -10,7 +10,7 @@ const ui_structure = {
         wallet_start_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action:"render_contact_listing('normal')" },
             { visible: true, component_type: "text", label: "Wallet", position: "center" },
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-info-circle", label: "Info", position: "right", action:"render_wallet_about()" }
+            { visible: false, component_type: "icon_label", icon: "fa-solid fa-info-circle", label: "Info", position: "right", action:"render_wallet_about()" }
         ],
         wallet_about_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left" },
@@ -20,7 +20,7 @@ const ui_structure = {
         personal_profile_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_start()" },
             { visible: true, component_type: "text", label: "Profile", position: "center" },
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-square-pen", label: "Edit", position: "right" }
+            { visible: false, component_type: "icon_label", icon: "fa-solid fa-square-pen", label: "Edit", position: "right" }
         ],
         other_profile_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_chat_listing('normal')" },
@@ -30,7 +30,7 @@ const ui_structure = {
         group_profile_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_chat_listing('normal')" },
             { visible: true, component_type: "text", label: "Group Profile", position: "center" },
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-users", label: "Members", position: "right" }
+            { visible: false, component_type: "icon_label", icon: "fa-solid fa-users", label: "Members", position: "right" }
         ],
         contact_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-trash", label: "Delete", position: "left", action:"render_contact_listing('select_many', 'delete_contact')" },
@@ -582,7 +582,7 @@ const ui_structure = {
                     visible: true, 
                     component_type: "button_stack", 
                     item_list: [
-                        { item_type: "button", item_label: "Update Profile", action: "step_navigation('verify_identity_1')" },
+                        { item_type: "button", item_label: "Update Profile", action: "update_current_personal_profile()" },
                         { item_type: "button", item_label: "Files Shared", action: "step_navigation('verify_identity_1')" },
                         { item_type: "button", item_label: "Links Shared", action: "step_navigation('purchase_page')" },
                         { item_type: "button", item_label: "Groups Shared", action: "step_navigation('purchase_page')" },
@@ -606,7 +606,7 @@ const ui_structure = {
     },
 
     update_other_profile_data: async function (user_id) {
-        console.log("Updating the other profile data...");
+        console.log(`Updating the other profile data... ${user_id}`);
 
         try {
             // Fetch user data from the backend
@@ -640,7 +640,7 @@ const ui_structure = {
                     visible: true, 
                     component_type: "button_stack", 
                     item_list: [
-                        { item_type: "button", item_label: "Update Profile", action: "step_navigation('verify_identity_1')" },
+                        
                         { item_type: "button", item_label: "Files Shared", action: "step_navigation('verify_identity_1')" },
                         { item_type: "button", item_label: "Links Shared", action: "step_navigation('purchase_page')" },
                         { item_type: "button", item_label: "Groups Shared", action: "step_navigation('purchase_page')" },
@@ -656,11 +656,11 @@ const ui_structure = {
     },
 
     update_group_profile_data: async function (group_id) {
-        console.log("Updating the group profile data...");
+        console.log(`Updating group profile data... ${group_id}`);
 
         try {
-            // Fetch group data from the backend
-            const response = await fetch(`/api/chat/${group_id}/group`);
+            // Fetch group data from the new backend route
+            const response = await fetch(`/api/group/${group_id}`);
             if (!response.ok) {
                 console.warn(`Failed to fetch group data for group_id: ${group_id}. Status: ${response.status}`);
                 return;
@@ -674,31 +674,28 @@ const ui_structure = {
                 { 
                     visible: true, 
                     component_type: "profile_image", 
-                    img_src: groupData.group_chat.profile_image_url || "static/images/default_profile.png" 
+                    img_src: groupData.group.profile_image_url || "static/images/default_profile.png"
                 },
                 { 
                     visible: true, 
                     component_type: "profile_background_image", 
-                    img_src: groupData.group_chat.wall_image_url || "static/images/default_background.png" 
+                    img_src: groupData.group.wall_image_url || "static/images/default_background.png"
                 },
                 { visible: true, component_type: "separation_title", label: "Transactions" },
-                
             ];
-
 
             this.bottom_section.group_profile_page = [
                 { 
                     visible: true, 
                     component_type: "button_stack", 
                     item_list: [
-                        { item_type: "button", item_label: "Update Profile", action: "step_navigation('verify_identity_1')" },
+                        { item_type: "button", item_label: "Update Profile", action: "update_current_group_profile()" },
                         { item_type: "button", item_label: "Files Shared", action: "step_navigation('verify_identity_1')" },
                         { item_type: "button", item_label: "Links Shared", action: "step_navigation('purchase_page')" },
                         { item_type: "button", item_label: "Groups Shared", action: "step_navigation('purchase_page')" },
-                        
                     ] 
                 }
-            ]
+            ];
 
             console.log("Updated group_profile_page:", this.middle_section.group_profile_page);
         } catch (error) {
@@ -710,11 +707,11 @@ const ui_structure = {
         console.log("Updating wallet data...");
 
         try {
-            // Fetch user data from localStorage
-            const userData = fetch_user_data();
+            // Fetch user data from the backend
+            const userData = await fetch_user_backend_data();
 
             if (!userData) {
-                console.warn("No user data found in localStorage.");
+                console.warn("No user data found in the backend.");
                 return;
             }
 
@@ -748,11 +745,11 @@ const ui_structure = {
                 {
                     visible: true,
                     component_type: "transaction_summary_screen",
-                    item_list:{
-                        top_left:"2 incoming",
-                        top_right:"10 local processed",
-                        middle_center:"40.85sosa",
-                        bottom_right:"2 scroll processed"
+                    item_list: {
+                        top_left: "2 incoming",
+                        top_right: "10 local processed",
+                        middle_center: "40.85 SOSA",
+                        bottom_right: "2 scroll processed"
                     }
                 }
             ];

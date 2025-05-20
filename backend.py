@@ -52,7 +52,12 @@ import json
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.sqlite'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'uploads'
+# Update the UPLOAD_FOLDER to point to the static/images directory
+app.config['UPLOAD_FOLDER'] = 'static/images'
+
+
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
 
 db = SQLAlchemy(app)
 api = Api(app)
@@ -578,27 +583,42 @@ class AddChatMember(Resource):
 
 class CreateSingleChatMessage(Resource):
     def post(self):
-        data = request.form
-        user_id = data.get('user_id')
-        chat_id = data.get('chat_id')
-        content = data.get('content')
-        media = request.files.get('media')
-        media_filename = None
-
-        if media:
-            media_filename = secure_filename(media.filename)
-            media.save(os.path.join(app.config['UPLOAD_FOLDER'], media_filename))
-
         try:
-            message = ChatMessage(user_id=user_id, chat_id=chat_id, content=content, media_filename=media_filename)
+            # Parse the JSON payload
+            data = request.get_json()
+
+            # Extract required fields
+            user_id = data.get('user_id')
+            chat_id = data.get('chat_id')
+            content = data.get('content')
+            media = request.files.get('media')  # Optional media file
+            media_filename = None
+
+            # Handle media file if provided
+            if media:
+                media_filename = secure_filename(media.filename)
+                media.save(os.path.join(app.config['UPLOAD_FOLDER'], media_filename))
+
+            # Ensure required fields are not None
+            if not user_id or not chat_id:
+                return {"message": "user_id and chat_id are required fields"}, 400
+
+            # Create and save the message
+            message = ChatMessage(
+                user_id=user_id,
+                chat_id=chat_id,
+                content=content,
+                media_filename=media_filename
+            )
             db.session.add(message)
             db.session.commit()
-            return {"message": "Message sent", "message_id": message.id}
-        
+
+            return {"message": "Message sent", "message_id": message.id}, 201
+
         except Exception as e:
             db.session.rollback()
             print(f"\nError sending message: {e}\n")
-            return {"message": "Error sending message"}, 500
+            return {"message": "Error sending message", "error": str(e)}, 500
 
 
 class CreateGroupChatMessage(Resource):
@@ -929,23 +949,85 @@ def delete_user(user_id):
     return {"message": "User not found"}, 404
 
 
-# update user
+
 @app.route('/api/user/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
-    data = request.get_json()
     user = User.query.get(user_id)
-    if user:
-        user.username = data.get('username', user.username)
-        user.email = data.get('email', user.email)
-        user.otp_secret = data.get('otp_secret', user.otp_secret)
-        user.wall_image_url = data.get('wall_image_url', user.wall_image_url)
-        user.profile_image_url = data.get('profile_image_url', user.profile_image_url)
+    if not user:
+        return {"message": "User not found"}, 404
 
-        db.session.commit()
-        return {"message": "User updated", "user": user.to_dict()}
-    return {"message": "User not found"}, 404
+    # Update text fields from form data
+    data = request.form
+    user.username = data.get('username', user.username)
+    user.email = data.get('email', user.email)
+    user.otp_secret = data.get('otp_secret', user.otp_secret)
+
+    # Handle image uploads
+    if 'wall_image' in request.files:
+        wall_image = request.files['wall_image']
+        if wall_image:
+            wall_image_filename = secure_filename(wall_image.filename)
+            wall_image_path = os.path.join(app.config['UPLOAD_FOLDER'], wall_image_filename)
+            wall_image.save(wall_image_path)
+            user.wall_image_url = f"/static/images/{wall_image_filename}"  # Save relative path
+
+    if 'profile_image' in request.files:
+        profile_image = request.files['profile_image']
+        if profile_image:
+            profile_image_filename = secure_filename(profile_image.filename)
+            profile_image_path = os.path.join(app.config['UPLOAD_FOLDER'], profile_image_filename)
+            profile_image.save(profile_image_path)
+            user.profile_image_url = f"/static/images/{profile_image_filename}"  # Save relative path
+
+    # Commit changes to the database
+    db.session.commit()
+    return {"message": "User updated", "user": user.to_dict()}
 
 
+@app.route('/api/group/<int:group_id>', methods=['PUT'])
+def update_group_profile(group_id):
+    group = Group.query.get(group_id)
+    if not group:
+        return {"message": "Group not found"}, 404
+
+    # Update text fields from form data
+    data = request.form
+    group.name = data.get('name', group.name)
+    group.email = data.get('email', group.email)
+    group.otp_secret = data.get('otp_secret', group.otp_secret)
+
+    # Handle image uploads
+    if 'wall_image' in request.files:
+        wall_image = request.files['wall_image']
+        if wall_image:
+            wall_image_filename = secure_filename(wall_image.filename)
+            wall_image_path = os.path.join(app.config['UPLOAD_FOLDER'], wall_image_filename)
+            wall_image.save(wall_image_path)
+            group.wall_image_url = f"/static/images/{wall_image_filename}"  # Save relative path
+
+    if 'profile_image' in request.files:
+        profile_image = request.files['profile_image']
+        if profile_image:
+            profile_image_filename = secure_filename(profile_image.filename)
+            profile_image_path = os.path.join(app.config['UPLOAD_FOLDER'], profile_image_filename)
+            profile_image.save(profile_image_path)
+            group.profile_image_url = f"/static/images/{profile_image_filename}"  # Save relative path
+
+    # Commit changes to the database
+    db.session.commit()
+    return {"message": "Group profile updated", "group": group.to_dict()}
+
+# fetch group infor
+@app.route('/api/group/<int:group_id>', methods=['GET'])
+def fetch_group(group_id):
+    group = Group.query.get(group_id)
+    if not group:
+        return {"message": "Group not found"}, 404
+
+    # Convert the group to a dictionary
+    group_data = group.to_dict()
+
+    return jsonify({"message": "Group fetched successfully", "group": group_data}), 200
 
 
 api.add_resource(CreateSingleChat, '/api/chat/single')
@@ -992,6 +1074,28 @@ def get_group_chat(chat_id):
     except Exception as e:
         print(f"Error fetching group chat for chat_id {chat_id}: {e}")
         return jsonify({"message": "Error fetching group chat", "error": str(e)}), 500
+
+
+@app.route('/api/chat/<int:chat_id>/messages', methods=['GET'])
+def get_chat_messages(chat_id):
+    """
+    Fetch all messages for a given chat ID.
+    """
+    try:
+        # Query the database for messages associated with the given chat_id
+        messages = ChatMessage.query.filter_by(chat_id=chat_id).order_by(ChatMessage.timestamp.asc()).all()
+
+        if not messages:
+            return jsonify({"message": "No messages found for this chat"}), 404
+
+        # Convert the messages to a list of dictionaries
+        messages_data = [message.to_dict() for message in messages]
+
+        return jsonify({"message": "Messages fetched successfully", "messages": messages_data}), 200
+
+    except Exception as e:
+        print(f"Error fetching messages for chat_id {chat_id}: {e}")
+        return jsonify({"message": "Error fetching messages", "error": str(e)}), 500
 
 
 @app.route('/app.html')
@@ -1277,6 +1381,7 @@ def sign_group_withdrawal():
         db.session.rollback()
         return {"message": f"Error signing withdrawal request: {e}"}, 500
 
+
 @app.route('/api/wallet/send_token', methods=['POST'])
 def send_token():
     data = request.get_json()
@@ -1330,4 +1435,4 @@ if __name__ == "__main__":
         os.makedirs(app.config['UPLOAD_FOLDER'])
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(debug=True, port=5000)  # Change the port to 5001

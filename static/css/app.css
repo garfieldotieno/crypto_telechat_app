@@ -82,12 +82,79 @@ html, body {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    overflow: auto; /* Allow scrolling only in content if needed */
+    gap: 10px;
+    
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    background-color: #232D3B;
     position: relative;
-    background-color: #17212B;
+    width: 100%; /* Ensure it spans the full width */
+    height: calc(100vh - 120px); /* Explicit height */
+  
 }
 
 
+/* Hide Scrollbar for a Cleaner Look (Optional) */
+.middle_section::-webkit-scrollbar {
+    width: 8px; /* Width of the scrollbar */
+}
+
+.middle_section::-webkit-scrollbar-thumb {
+    background-color: #3C5E72; /* Color of the scrollbar thumb */
+    border-radius: 4px; /* Rounded corners for the scrollbar thumb */
+}
+
+.middle_section::-webkit-scrollbar-track {
+    background-color: #17212B; /* Background color of the scrollbar track */
+}
+
+/* Chat Message Styling */
+.message_item {
+    max-width: 70%; /* Limit message width */
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Owner's Messages */
+.message_owner {
+    align-self: flex-end; /* Align owner's messages to the right */
+    background-color: #3C5E72; /* Background color for owner's messages */
+    color: #FFFFFF; /* Text color for owner's messages */
+    border-radius: 10px 10px 0 10px; /* Rounded corners */
+    padding: 10px;
+    margin: 5px 0;
+    max-width: 70%; /* Limit message width */
+}
+
+/* Recipient's Messages */
+.message_recipient {
+    align-self: flex-start; /* Align recipient's messages to the left */
+    background-color: #17212B; /* Background color for recipient's messages */
+    color: #A1B6C3; /* Text color for recipient's messages */
+    border-radius: 10px 10px 10px 0; /* Rounded corners */
+    padding: 10px;
+    margin: 5px 0;
+    max-width: 70%; /* Limit message width */
+}
+
+/* Message Content */
+.message_content {
+    word-wrap: break-word; /* Ensure long text wraps */
+}
+
+/* Timestamp Styling */
+.message_timestamp {
+    font-size: 12px;
+    color: #A1B6C3; /* Subtle color for timestamps */
+    align-self: flex-end; /* Align timestamp to the right */
+    margin-top: 5px; /* Add spacing above the timestamp */
+}
 
 /* Special case for background image in start screen */
 .start-screen .middle_section {
