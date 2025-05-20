@@ -573,6 +573,7 @@ const ui_structure = {
                     component_type: "profile_background_image", 
                     img_src: userData.wall_image_url || "static/images/default_background.png" 
                 },
+                { visible: true, component_type: "separation_title", label: `${userData.username}` },
                 { visible: true, component_type: "separation_title", label: "Transactions" },
             ];
 
@@ -681,6 +682,7 @@ const ui_structure = {
                     component_type: "profile_background_image", 
                     img_src: groupData.group.wall_image_url || "static/images/default_background.png"
                 },
+                { visible: true, component_type: "separation_title", label: `${groupData.name}` },
                 { visible: true, component_type: "separation_title", label: "Transactions" },
             ];
 
