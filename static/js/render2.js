@@ -65,16 +65,12 @@ function create_top_section(items) {
     return section;
 }
 
-
 function create_middle_section(items) {
     let section = document.createElement("div");
     section.classList.add("middle_section");
 
-    
     section.style.alignItems = "center";
     section.style.justifyContent = "flex-start";
-    
-    
 
     items.forEach(item => {
         if (!item.visible) return;
@@ -90,13 +86,11 @@ function create_middle_section(items) {
                     let subElement = document.createElement("div");
                     subElement.classList.add("icon_label");
 
-                    // Add icon and label
                     subElement.innerHTML = `
                         <i class="${subItem.icon}"></i>
                         <span>${subItem.label}</span>
                     `;
 
-                    // Add action
                     if (subItem.action) {
                         subElement.setAttribute("onclick", subItem.action);
                     }
@@ -134,7 +128,7 @@ function create_middle_section(items) {
             case "background_image":
                 element.classList.add("image_wrapper");
                 element.innerHTML = `
-                 <img src="${item.img_src}" class="background_image" />
+                    <img src="${item.img_src}" class="background_image" />
                 `;
                 break;
 
@@ -142,7 +136,7 @@ function create_middle_section(items) {
                 element.classList.add("separation_title");
                 element.innerHTML = `<div class="separation_title_label">${item.label}</div>`;
                 break;
-            
+
             case "separation_title_address":
                 element.classList.add("separation_title_address");
                 element.innerHTML = `<div class="separation_title_label">${item.label}</div>`;
@@ -152,7 +146,7 @@ function create_middle_section(items) {
                 element.classList.add("info_section");
                 element.innerHTML = `<div class="info_content">${item.label}</div>`;
                 break;
-            
+
             case "list_pad":
                 element.classList.add("list_pad_container");
 
@@ -164,7 +158,17 @@ function create_middle_section(items) {
                     item.item_list = get_my_chats();
                 }
 
+                if (item.component_owner === "wallet_page"){
+                    console.log('arrived at wallet_page item')
+                }
+
                 item.item_list.forEach(listItem => {
+
+                    if (!listItem || !listItem.item_type) {
+                        console.warn("Skipping invalid list item:", listItem);
+                        return;
+                    }
+
                     let listItemElement = document.createElement("div");
                     listItemElement.classList.add(listItem.item_type);
 
@@ -206,18 +210,92 @@ function create_middle_section(items) {
                             listItemElement.setAttribute("data-contact-app-user-id", listItem.user_dict?.id || "null");
                             break;
 
-                        case "list_item_transaction":
+                        
+
+                        case "list_item_transaction_vest":
+                            console.log('starting creation of transaction vest item');
+                            // let transactionElement0 = document.createElement("div");
+                            // transactionElement0.classList.add(listItem.item_type);
+                        
+                            let iconClass0 = "";
+                            switch (listItem.type) {
+                                case "purchase":
+                                    iconClass0 = "fa-solid fa-cart-shopping";
+                                    break;
+                                case "withdraw":
+                                    iconClass0 = "fa-solid fa-money-bill-transfer";
+                                    break;
+                                case "send":
+                                    iconClass0 = "fa-solid fa-arrow-right";
+                                    break;
+                                case "receive":
+                                    iconClass0 = "fa-solid fa-arrow-left";
+                                    break;
+                                default:
+                                    console.warn(`Unknown transaction type: ${listItem.type}`);
+                                    return; // Skip invalid transaction types
+                            }
+                        
                             listItemElement.innerHTML = `
                                 <div class="list_item_container">
-                                    <div class="list_item_image"></div>
+                                    <div class="list_item_icon">
+                                        <i class="${iconClass0}"></i>
+                                    </div>
                                     <div class="list_item_content">
-                                        <div class="list_item_title">${listItem.label}</div>
-                                        <p class="list_item_message" style="color: ${listItem.status === 'online' ? '#037EE5' : '#666'};">${listItem.status}</p>
+                                        <div class="list_item_header">
+                                            <div class="list_item_title">${listItem.label}</div>
+                                            <span class="list_item_title_spacer"></span>
+                                            <div class="list_item_datetime">${new Date(listItem.datetime).toLocaleDateString()}</div>
+                                        </div>
                                     </div>
                                 </div>
                             `;
-                            listItemElement.setAttribute("data-transaction-id", listItem.id);
-                            listItemElement.setAttribute("onclick", "render_transaction_details()");
+                            console.log(`before appending, created transaction vest item is ${listItemElement}`);
+                            element.appendChild(listItemElement); // Append the correct element
+                            console.log('ending creation of a single transaction vest item');
+                            break;    
+
+                        case "list_item_transaction_token":
+                            console.log('starting creation of transaction token item');
+                            // let transactionElement = document.createElement("div");
+                            // transactionElement.classList.add(listItem.item_type);
+
+                            let iconClass = "";
+                            switch (listItem.type) {
+                                case "purchase":
+                                    iconClass = "fa-solid fa-cart-shopping";
+                                    break;
+                                case "withdraw":
+                                    iconClass = "fa-solid fa-money-bill-transfer";
+                                    break;
+                                case "send":
+                                    iconClass = "fa-solid fa-arrow-right";
+                                    break;
+                                case "receive":
+                                    iconClass = "fa-solid fa-arrow-left";
+                                    break;
+                                default:
+                                    console.warn(`Unknown transaction type: ${listItem.type}`);
+                                    return;
+                            }   
+                            listItemElement.innerHTML = `
+                                <div class="list_item_container">
+                                    <div class="list_item_icon">
+                                        <i class="${iconClass}"></i>
+                                    </div>
+                                    <div class="list_item_content">
+                                        <div class="list_item_header">
+                                            <div class="list_item_title">${listItem.label}</div>
+                                            <span class="list_item_title_spacer"></span>
+                                            <div class="list_item_datetime">${new Date(listItem.datetime).toLocaleDateString()}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+
+                            console.log(`before appending, created transaction token item is ${listItemElement}`);
+                            element.appendChild(listItemElement);
+                            console.log('ending creation of a single transaction token item');
                             break;
 
                         default:
@@ -237,6 +315,7 @@ function create_middle_section(items) {
 
     return section;
 }
+
 
 
 function create_bottom_section(items) {
@@ -700,8 +779,200 @@ function render_wallet_start() {
 }
 
 
-function render_wallet_about() {
-    console.log("Rendering wallet about page...");
+function render_wallet_personal() {
+    console.log("Rendering personal wallet page...");
+
+    // Clear previous content
+    document.body.innerHTML = "";
+
+    // Determine container classes based on screen size
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    // Create main container
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    try {
+        // Dynamically update the personal wallet data
+        ui_structure.update_wallet_personal_data();
+
+        // Parse UI structure for personal wallet page
+        let topSectionConfig = ui_structure.top_section.wallet_personal_page;
+        let middleSectionConfig = ui_structure.middle_section.wallet_personal_page;
+        let bottomSectionConfig = ui_structure.bottom_section.wallet_personal_page;
+
+        // Build top section
+        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+            centerContainer.appendChild(create_top_section(topSectionConfig));
+        }
+
+        // Build middle section for personal wallet page
+        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+            let middleSection = create_middle_section(middleSectionConfig);
+            centerContainer.appendChild(middleSection);
+        }
+
+        // Build bottom section for personal wallet page
+        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+            let bottomSection = create_bottom_section(bottomSectionConfig);
+            centerContainer.appendChild(bottomSection);
+        }
+    } catch (error) {
+        console.error("Error rendering personal wallet page:", error);
+    }
+}
+
+function render_wallet_group() {
+    console.log("Rendering group wallet page...");
+
+    // Clear previous content
+    document.body.innerHTML = "";
+
+    // Determine container classes based on screen size
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    // Create main container
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    try {
+        // Dynamically update the group wallet data
+        ui_structure.update_wallet_group_data();
+
+        // Parse UI structure for group wallet page
+        let topSectionConfig = ui_structure.top_section.wallet_group_page;
+        let middleSectionConfig = ui_structure.middle_section.wallet_group_page;
+        let bottomSectionConfig = ui_structure.bottom_section.wallet_group_page;
+
+        // Build top section
+        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+            centerContainer.appendChild(create_top_section(topSectionConfig));
+        }
+
+        // Build middle section for group wallet page
+        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+            let middleSection = create_middle_section(middleSectionConfig);
+            centerContainer.appendChild(middleSection);
+        }
+
+        // Build bottom section for group wallet page
+        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+            let bottomSection = create_bottom_section(bottomSectionConfig);
+            centerContainer.appendChild(bottomSection);
+        }
+    } catch (error) {
+        console.error("Error rendering group wallet page:", error);
+    }
+}
+
+function render_wallet_purchase() {
+    console.log("Rendering wallet purchase page...");
+
+    // Clear previous content
+    document.body.innerHTML = "";
+
+    // Determine container classes based on screen size
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    // Create main container
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    try {
+        // Dynamically update the wallet purchase data
+        ui_structure.update_wallet_purchase_data();
+
+        // Parse UI structure for wallet purchase page
+        let topSectionConfig = ui_structure.top_section.wallet_purchase_page;
+        let middleSectionConfig = ui_structure.middle_section.wallet_purchase_page;
+        let bottomSectionConfig = ui_structure.bottom_section.wallet_purchase_page;
+
+        // Build top section
+        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+            centerContainer.appendChild(create_top_section(topSectionConfig));
+        }
+
+        // Build middle section for wallet purchase page
+        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+            let middleSection = create_middle_section(middleSectionConfig);
+            centerContainer.appendChild(middleSection);
+        }
+
+        // Build bottom section for wallet purchase page
+        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+            let bottomSection = create_bottom_section(bottomSectionConfig);
+            centerContainer.appendChild(bottomSection);
+        }
+    } catch (error) {
+        console.error("Error rendering wallet purchase page:", error);
+    }
+}
+
+function render_wallet_withdraw() {
+    console.log("Rendering wallet withdraw page...");
+
+    // Clear previous content
+    document.body.innerHTML = "";
+
+    // Determine container classes based on screen size
+    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
+    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
+
+    // Create main container
+    let container = document.createElement("div");
+    container.classList.add(containerClass);
+    document.body.appendChild(container);
+
+    let centerContainer = document.createElement("div");
+    centerContainer.classList.add(centerContainerClass);
+    container.appendChild(centerContainer);
+
+    try {
+        // Dynamically update the wallet withdraw data
+        ui_structure.update_wallet_withdraw_data();
+
+        // Parse UI structure for wallet withdraw page
+        let topSectionConfig = ui_structure.top_section.wallet_withdraw_page;
+        let middleSectionConfig = ui_structure.middle_section.wallet_withdraw_page;
+        let bottomSectionConfig = ui_structure.bottom_section.wallet_withdraw_page;
+
+        // Build top section
+        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+            centerContainer.appendChild(create_top_section(topSectionConfig));
+        }
+
+        // Build middle section for wallet withdraw page
+        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+            let middleSection = create_middle_section(middleSectionConfig);
+            centerContainer.appendChild(middleSection);
+        }
+
+        // Build bottom section for wallet withdraw page
+        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+            let bottomSection = create_bottom_section(bottomSectionConfig);
+            centerContainer.appendChild(bottomSection);
+        }
+    } catch (error) {
+        console.error("Error rendering wallet withdraw page:", error);
+    }
 }
 
 
@@ -1201,7 +1472,7 @@ function render_create_contact() {
     // Clear previous content
     document.body.innerHTML = "";
     document.body.classList.remove("start-screen");
-    document.body.classList.add("create-contact-screen");
+    document.body.classList.add("create-user-screen");
 
     // Determine container classes based on screen size
     let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
@@ -1249,7 +1520,7 @@ function render_create_contact() {
                 inputContainer.appendChild(inputField);
                 middleSection.appendChild(inputContainer);
                 inputField.focus();
-            }
+            } 
         }
     }
 
@@ -1319,6 +1590,8 @@ function render_create_contact() {
         }
     }
 }
+
+
 
 function render_create_chat(){
     console.log('calling render_create_chat')

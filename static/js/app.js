@@ -558,8 +558,8 @@ function get_user_wallet() {
 
         // Exclude the private key for security
         const walletInfo = {
-            public_address: walletDataFromBackend.public_address,
-            amount: walletDataFromBackend.amount
+            public_address: walletDataFromBackend.wallet_data.public_address,
+            amount: walletDataFromBackend.wallet_data.amount
         };
 
         return walletInfo;
@@ -1097,13 +1097,14 @@ function poll_new_chat_messages() {
             const middleSection = document.querySelector(".middle_section");
             if (middleSection) {
                 middleSection.innerHTML = ""; // Clear the current messages
+                const user_data = decodeData(localStorage.getItem('userData'));
 
                 updatedChatPadData.messages.forEach(message => {
                     const messageElement = document.createElement("div");
                     messageElement.classList.add("message_item");
 
                     // Determine if the message is from the current user or another user
-                    const isOwner = message.user_id === parseInt(chatPadData.chat_member_ids[0]);
+                    const isOwner = message.user_id === user_data.id;
                     messageElement.classList.add(isOwner ? "message_owner" : "message_recipient");
 
                     messageElement.innerHTML = `
@@ -1438,4 +1439,110 @@ function handleFileUpload(fieldName, isGroup = false) {
     };
 
     fileInput.click();
+}
+
+// check if admin for group
+function is_any_group_admin() {
+    console.log("Checking if user is admin for any group...");
+    let registerData = localStorage.getItem('userData');
+    if (!registerData) {
+        console.warn("No register_data found in localStorage.");
+        return false;
+    }
+
+    try {
+        let parsedData = JSON.parse(registerData);
+        let user_id = parsedData.id;
+
+        if (!user_id) {
+            console.warn("User ID not found in register_data.");
+            return false;
+        }
+
+        // Fetch all groups using the new endpoint
+        let request = new XMLHttpRequest();
+        request.open("GET", `/api/user/${user_id}/groups`, false); // Sync request
+        request.send(null);
+
+        if (request.status !== 200) {
+            console.error("Failed to fetch groups:", request.statusText);
+            return false;
+        }
+
+        let groups = JSON.parse(request.responseText).groups;
+        console.log("Fetched groups:", groups); // Log the fetched groups
+
+        // Save the groups data to localStorage
+        localStorage.setItem('admin_group_data', JSON.stringify(groups));
+        console.log("Saved groups data to localStorage under key 'admin_group_data'.");
+
+        // Check if the user is an admin in any group
+        const isAdmin = groups.some(group => group.creator_id === user_id);
+        console.log("Is user admin in any group:", isAdmin);
+        return isAdmin;
+
+    } catch (error) {
+        console.error("Error checking admin status:", error);
+        return false;
+    }
+}
+
+
+// purchase functions
+function list_admin_group_token_purchases(){
+    console.log("Listing admin group purchases...");
+}
+
+function list_admin_group_vest_purchases(){
+    console.log("Listing admin group vest purchases...");
+}
+
+function list_personal_token_purchases(){
+    console.log("Listing personal token purchases...");
+}
+
+function list_personal_vest_purchases(){
+    console.log("Listing personal vest purchases...");
+}
+
+
+// withdraw functions
+function list_admin_group_token_withdrawals(){
+    console.log("Listing admin group token withdrawals...");
+}
+
+function list_admin_group_vest_withdrawals(){
+    console.log("Listing admin group vest withdrawals...");
+}
+
+function list_personal_token_withdrawals(){
+    console.log("Listing personal token withdrawals...");
+}
+
+function list_personal_vest_withdrawals(){
+    console.log("Listing personal vest withdrawals...");
+}
+
+
+// personal transactions  functions
+function list_personal_token_transactions(){
+    console.log("Listing personal token transactions...");
+}
+function list_personal_vest_transactions(){
+    console.log("Listing personal vest transactions...");
+}
+function list_personal_group_token_transactions(){
+    console.log("Listing personal group transactions...");
+}
+function list_personal_group_vest_transactions(){
+    console.log("Listing personal group vest transactions...");
+}
+
+// group transactions functions
+function list_admin_group_token_transactions(){
+    console.log("Listing admin group token transactions...");
+}
+
+function list_admin_group_vest_transactions(){
+    console.log("Listing admin group vest transactions...");
 }

@@ -326,6 +326,22 @@ class VestingSchedule(db.Model):
         return result
 
 
+class WalletSummary(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    public_address = db.Column(db.String(80), nullable=False)
+    incoming = db.Column(db.Integer)
+    local_processed = db.Column(db.Integer)
+    scroll_processed = db.Column(db.Integer)
+    time_stamp = db.Column(db.Float, nullable=False)
+
+    def to_dict(self):
+        result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        for key, value in result.items():
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+        return result
+
+
 # RESTful API Resources
 class CreateUser(Resource):
     def post(self):
@@ -984,6 +1000,37 @@ def update_user(user_id):
     return {"message": "User updated", "user": user.to_dict()}
 
 
+@app.route('/api/wallet/<int:user_id>', methods=['GET'])
+def get_user_wallet(user_id):
+    f"""
+    Fetch wallet data for a specific user. {user_id}
+    """
+    try:
+        # Fetch the user by ID
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        # Fetch the wallet account associated with the user
+        wallet_account = SingleWalletAccount.query.filter_by(user_id=user_id).first()
+        if not wallet_account:
+            return jsonify({"message": "Wallet not found for this user"}), 404
+
+        # Convert wallet data to a dictionary and exclude the private key
+        wallet_data = wallet_account.to_dict()
+        wallet_data.pop('private_key', None)  # Exclude private key for security
+
+        return jsonify({
+            "message": "Wallet data fetched successfully",
+            "wallet": wallet_data
+        }), 200
+
+    except Exception as e:
+        print(f"Error fetching wallet data for user_id {user_id}: {e}")
+        return jsonify({"message": "Error fetching wallet data", "error": str(e)}), 500
+
+
+
 @app.route('/api/group/<int:group_id>', methods=['PUT'])
 def update_group_profile(group_id):
     group = Group.query.get(group_id)
@@ -1029,6 +1076,30 @@ def fetch_group(group_id):
 
     return jsonify({"message": "Group fetched successfully", "group": group_data}), 200
 
+
+@app.route('/api/user/<int:user_id>/groups', methods=['GET'])
+def get_user_groups(user_id):
+    """
+    Fetch all groups created by a specific user.
+    """
+    try:
+        # Query the database for groups where the creator_id matches the user_id
+        groups = Group.query.filter_by(creator_id=user_id).all()
+
+        if not groups:
+            return jsonify({"message": "No groups found for this user"}), 404
+
+        # Convert the groups to a list of dictionaries
+        groups_data = [group.to_dict() for group in groups]
+
+        return jsonify({
+            "message": "Groups fetched successfully",
+            "groups": groups_data
+        }), 200
+
+    except Exception as e:
+        print(f"Error fetching groups for user_id {user_id}: {e}")
+        return jsonify({"message": "Error fetching groups", "error": str(e)}), 500
 
 api.add_resource(CreateSingleChat, '/api/chat/single')
 api.add_resource(CreateGroupChat, '/api/chat/group')
@@ -1090,6 +1161,8 @@ def get_chat_messages(chat_id):
 
         # Convert the messages to a list of dictionaries
         messages_data = [message.to_dict() for message in messages]
+
+        print(f"fetched message data is : {messages_data}")
 
         return jsonify({"message": "Messages fetched successfully", "messages": messages_data}), 200
 

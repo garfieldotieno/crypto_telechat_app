@@ -502,6 +502,27 @@ html, body {
         height: 35px; /* Smaller input height */
         font-size: 14px; /* Adjust font size */
     }
+
+    .list_item_container {
+        padding: 8px;
+    }
+
+    .list_item_icon {
+        width: 35px;
+        height: 35px;
+    }
+
+    .list_item_icon i {
+        font-size: 16px;
+    }
+
+    .list_item_title {
+        font-size: 14px;
+    }
+
+    .list_item_message {
+        font-size: 12px;
+    }
 }
 
 
@@ -680,7 +701,7 @@ html, body {
 }
 
 /* List Item Wallet and Chat */
-.list_item_wallet, .list_item_chat, .list_item_contact {
+.list_item_wallet, .list_item_chat, .list_item_contact, .list_item_transaction_vest, .list_item_transaction_token {
     display: flex;
     align-items: center;
     background-color: #232D3B;
@@ -717,6 +738,24 @@ html, body {
     
 }
 
+/* Icon styling */
+.list_item_icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #e0e0e0;
+    border-radius: 50%;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.list_item_icon i {
+    font-size: 18px;
+    color: #555;
+}
+
 .list_item_image {
     width: 40px;
     height: 40px;
@@ -733,10 +772,11 @@ html, body {
 
 
 .list_item_title {
-    font-weight: bold;
     color: #A1B6C3;
-    font-weight:100;
+    font-weight: 100;
     font-size: 16px;
+    display: flex;
+    align-items: center;
 }
 
 .list_item_message {
@@ -801,4 +841,30 @@ html, body {
 
 .transaction_item.bottom_right {
     grid-area: bottom_right;
+}
+
+.list_item_header {
+    display: flex;
+    justify-content: space-between; /* Space between title and datetime */
+    align-items: center; /* Vertically align items */
+    width: 100%; /* Ensure the header spans the full width */
+}
+
+.list_item_title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #FFFFFF;
+    flex: 1; /* Allow the title to take up available space */
+    text-align: left; /* Align the title to the left */
+}
+
+.list_item_title_spacer{
+    margin: 2.5rem;
+}
+
+.list_item_datetime {
+    font-size: 14px;
+    color: #666;
+    white-space: nowrap; /* Prevent wrapping of the datetime */
+    text-align: right; /* Align the datetime to the right */
 }
