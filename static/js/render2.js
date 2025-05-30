@@ -1913,6 +1913,9 @@ async function renderChatUI(chatPadData) {
         }
 
         try {
+            // sending user data
+            let user_data = decodeData(localStorage.getItem('userData'));
+
             // Determine the endpoint based on chat type
             const endpoint = chatPadData.chat_type === "group"
                 ? "/api/chat/group/message"
@@ -1925,7 +1928,7 @@ async function renderChatUI(chatPadData) {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    user_id: parseInt(chatPadData.chat_member_ids[0]), // Assuming the first ID is the sender
+                    user_id: parseInt(user_data.id), // Assuming the first ID is the sender
                     chat_id: chatPadData.chat_id,
                     content: content
                 })
