@@ -159,10 +159,10 @@ const ui_structure = {
         wallet_start_page: [
             { visible: true, component_type: "button_stack", 
                 item_list: [
-                    { item_type: "button", item_label: "Personal Transactions", action: "render_wallet_personal()" },
-                    { item_type: "button", item_label: "Group Transactions", action: "render_wallet_group()" },
-                    { item_type: "button", item_label: "Purchase Token", action: "render_wallet_purchase()" },
-                    { item_type: "button", item_label: "Withdraw Token", action: "render_wallet_withdraw()" }
+                    { item_type: "button", item_label: "Purchase", action: "render_purchase_start()" },
+                    { item_type: "button", item_label: "Send", action: "render_send_start()" },
+                    { item_type: "button", item_label: "Sign", action: "render_sign_start()" },
+                    { item_type: "button", item_label: "Withdraw", action: "render_withdraw_start()" }
                 ] 
             }
         ],
@@ -628,7 +628,7 @@ const ui_structure = {
                     img_src: userData.wall_image_url || "static/images/default_background.png" 
                 },
                 { visible: true, component_type: "separation_title", label: `${userData.username}` },
-                { visible: true, component_type: "separation_title", label: "Transactions" },
+                
             ];
 
             // Update the bottom_section.personal_profile_page with a separation_title
