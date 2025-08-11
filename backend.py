@@ -9,8 +9,9 @@ import os
 import random, string
 from datetime import datetime, timezone
 import pytz
-
+import json
 from web3 import Web3
+
 
 try:
     # Connect to the local blockchain
@@ -43,7 +44,30 @@ def generate_ethereum_address():
     except Exception as e:
         print(f"Error generating Ethereum address: {e}")
         return None
-    
+
+
+# Load wallet (use Hardhat account #0 for testing)
+PRIVATE_KEY = os.getenv("PRIVATE_KEY", "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")  # replace with actual key
+ACCOUNT = web3.eth.account.from_key(PRIVATE_KEY)
+ADDRESS = ACCOUNT.address
+WALLET_ADDRESS = ADDRESS
+
+# Load ERC-20 ABI (minimal)
+with open("erc20_abi.json") as f:
+    ERC20_ABI = json.load(f)
+
+# Load SOSA ABI
+with open("SosaToken.json") as f:
+    sosa_artifact = json.load(f)
+SOSA_ABI = sosa_artifact["abi"]
+
+# Address of deployed SOSA token
+# Convert to checksum address before using
+SOSA_TOKEN_ADDRESS = os.getenv("SOSA_TOKEN_ADDRESS", "0x5fbdb2315678afecb367f032d93f642f64180aa3")
+SOSA_TOKEN_ADDRESS = web3.to_checksum_address(SOSA_TOKEN_ADDRESS)
+
+sosa_contract = web3.eth.contract(address=SOSA_TOKEN_ADDRESS, abi=SOSA_ABI)
+
 
 import uuid
 import json
@@ -65,6 +89,74 @@ migrate = Migrate(app, db)
 
 # enabe CORS on all routes
 CORS(app)
+@app.route("/balance/<token_address>", methods=["GET"])
+def get_balance(token_address):
+    try:
+        token_address = web3.to_checksum_address(token_address)
+        contract = web3.eth.contract(address=token_address, abi=ERC20_ABI)
+        balance = contract.functions.balanceOf(WALLET_ADDRESS).call()
+        decimals = contract.functions.decimals().call()
+        symbol = contract.functions.symbol().call()
+        return jsonify({
+            "address": WALLET_ADDRESS,
+            "token": symbol,
+            "balance": balance / (10 ** decimals)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/send", methods=["POST"])
+def send_token_new():
+    try:
+        data = request.json
+        token_address = web3.to_checksum_address(data["token_address"])
+        to_address = web3.to_checksum_address(data["to"])
+        amount = int(data["amount"])
+
+        contract = web3.eth.contract(address=token_address, abi=ERC20_ABI)
+        decimals = contract.functions.decimals().call()
+        value = amount * (10 ** decimals)
+
+        nonce = web3.eth.get_transaction_count(WALLET_ADDRESS)
+        tx = contract.functions.transfer(to_address, value).build_transaction({
+            "from": WALLET_ADDRESS,
+            "nonce": nonce,
+            "gas": 200000,
+            "gasPrice": web3.to_wei("10", "gwei")
+        })
+
+        signed_tx = web3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        return jsonify({"tx_hash": tx_hash.hex()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/buy_sosa", methods=["POST"])
+def buy_sosa():
+    try:
+        data = request.json
+        eth_amount = float(data["eth_amount"])
+
+        sosa_address = web3.to_checksum_address(os.getenv("SOSA_TOKEN_ADDRESS", "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"))
+        contract = web3.eth.contract(address=sosa_address, abi=ERC20_ABI)
+
+        nonce = web3.eth.get_transaction_count(WALLET_ADDRESS)
+        tx = {
+            "from": WALLET_ADDRESS,
+            "to": sosa_address,
+            "value": web3.to_wei(eth_amount, "ether"),
+            "nonce": nonce,
+            "gas": 200000,
+            "gasPrice": web3.to_wei("10", "gwei")
+        }
+
+        signed_tx = web3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        return jsonify({"tx_hash": tx_hash.hex()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 class BaseModelMixin:
@@ -740,6 +832,7 @@ class LoadAmountSingleAccount(Resource):
             return {"message": "Amount loaded successfully"}
         return {"message": "Amount loading failed"}, 400
 
+
 class LoadAmountGroupAccount(Resource):
     def post(self):
         data = request.get_json()
@@ -764,6 +857,7 @@ class LoadAmountGroupAccount(Resource):
 
             return {"message": "Amount loaded successfully"}
         return {"message": "Amount loading failed"}, 400
+
 
 class SendToPersonAccount(Resource):
     def post(self):
@@ -792,6 +886,7 @@ class SendToPersonAccount(Resource):
 
             return {"message": "Transaction successful"}
         return {"message": "Transaction failed"}, 400
+
 
 class SendToGroupAccount(Resource):
     def post(self):
@@ -917,6 +1012,10 @@ class LogTransaction(Resource):
             print(f"Error logging transaction: {e}")
             return {"message": "Error logging transaction", "error": str(e)}, 500
 
+class FetchWalletSummary(Resource):
+    # takes an id and fetches for given user id
+    pass   
+
 
 # Register the LogTransaction resource
 api.add_resource(LogTransaction, '/api/transactions')
@@ -1006,6 +1105,8 @@ def get_user_wallet(user_id):
     Fetch wallet data for a specific user. {user_id}
     """
     try:
+        print(f"attempting to fetch wallet data for user {user_id}")
+
         # Fetch the user by ID
         user = User.query.get(user_id)
         if not user:
@@ -1020,10 +1121,14 @@ def get_user_wallet(user_id):
         wallet_data = wallet_account.to_dict()
         wallet_data.pop('private_key', None)  # Exclude private key for security
 
-        return jsonify({
+        returning_data = {
             "message": "Wallet data fetched successfully",
             "wallet": wallet_data
-        }), 200
+        }
+
+        print(f"fetch user {user_id} wallet information is {returning_data}")
+
+        return jsonify(returning_data), 200
 
     except Exception as e:
         print(f"Error fetching wallet data for user_id {user_id}: {e}")
@@ -1199,13 +1304,12 @@ def list_all_user_chats(user_id):
         return jsonify({"message": "Error fetching chats", "error": str(e)}), 500
 
 api.add_resource(CreateSingleAccount, '/api/wallet/single')
+api.add_resource(LoadAmountSingleAccount, '/api/wallet/load_single')
+api.add_resource(SendToPersonAccount, '/api/wallet/send_to_person')
+
 api.add_resource(CreateGroupAccount, '/api/wallet/group')
 api.add_resource(CreateGroupAccountMember, '/api/wallet/group/member')
-
-api.add_resource(LoadAmountSingleAccount, '/api/wallet/load_single')
 api.add_resource(LoadAmountGroupAccount, '/api/wallet/load_group')
-
-api.add_resource(SendToPersonAccount, '/api/wallet/send_to_person')
 api.add_resource(SendToGroupAccount, '/api/wallet/send_to_group')
 
 api.add_resource(WithdrawNormal, '/api/wallet/withdraw')

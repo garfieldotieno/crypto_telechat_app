@@ -546,6 +546,8 @@ function get_user_wallet() {
             }
         });
 
+        console.log(`fetched user wallet data ${response.JSON}`);
+
         if (!response.ok) {
             throw new Error(`Failed to fetch wallet data: ${response.statusText}`);
         }
@@ -1488,61 +1490,3 @@ function is_any_group_admin() {
 }
 
 
-// purchase functions
-function list_admin_group_token_purchases(){
-    console.log("Listing admin group purchases...");
-}
-
-function list_admin_group_vest_purchases(){
-    console.log("Listing admin group vest purchases...");
-}
-
-function list_personal_token_purchases(){
-    console.log("Listing personal token purchases...");
-}
-
-function list_personal_vest_purchases(){
-    console.log("Listing personal vest purchases...");
-}
-
-
-// withdraw functions
-function list_admin_group_token_withdrawals(){
-    console.log("Listing admin group token withdrawals...");
-}
-
-function list_admin_group_vest_withdrawals(){
-    console.log("Listing admin group vest withdrawals...");
-}
-
-function list_personal_token_withdrawals(){
-    console.log("Listing personal token withdrawals...");
-}
-
-function list_personal_vest_withdrawals(){
-    console.log("Listing personal vest withdrawals...");
-}
-
-
-// personal transactions  functions
-function list_personal_token_transactions(){
-    console.log("Listing personal token transactions...");
-}
-function list_personal_vest_transactions(){
-    console.log("Listing personal vest transactions...");
-}
-function list_personal_group_token_transactions(){
-    console.log("Listing personal group transactions...");
-}
-function list_personal_group_vest_transactions(){
-    console.log("Listing personal group vest transactions...");
-}
-
-// group transactions functions
-function list_admin_group_token_transactions(){
-    console.log("Listing admin group token transactions...");
-}
-
-function list_admin_group_vest_transactions(){
-    console.log("Listing admin group vest transactions...");
-}

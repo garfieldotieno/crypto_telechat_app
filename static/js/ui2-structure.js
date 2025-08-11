@@ -13,26 +13,18 @@ const ui_structure = {
             { visible: false, component_type: "icon_label", icon: "fa-solid fa-info-circle", label: "Info", position: "right", action:"render_wallet_about()" }
         ],
        
-        wallet_purchase_page: [
+        wallet_purchase_start_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_wallet_start()" },
             { visible: true, component_type: "text", label: "Purchase", position: "center" },
             { visible: false, component_type: "icon_label", icon: "fa-solid fa-square-pen", label: "Edit", position: "right" }
         ],
-        wallet_withdraw_page: [
+
+        wallet_purchase_types: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_wallet_start()" },
-            { visible: true, component_type: "text", label: "Withdraw", position: "center" },
+            { visible: true, component_type: "text", label: "Select", position: "center" },
             { visible: false, component_type: "icon_label", icon: "fa-solid fa-square-pen", label: "Edit", position: "right" }
         ],
-        wallet_personal_page: [
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_wallet_start()" },
-            { visible: true, component_type: "text", label: "Personal", position: "center" },
-            { visible: false, component_type: "icon_label", icon: "fa-solid fa-square-pen", label: "Edit", position: "right" }
-        ],
-        wallet_group_page: [
-            { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_wallet_start()" },
-            { visible: true, component_type: "text", label: "Group", position: "center" },
-            { visible: false, component_type: "icon_label", icon: "fa-solid fa-square-pen", label: "Edit", position: "right" }
-        ],  
+          
         personal_profile_page: [
             { visible: true, component_type: "icon_label", icon: "fa-solid fa-arrow-left", label: "Back", position: "left", action: "render_start()" },
             { visible: true, component_type: "text", label: "Profile", position: "center" },
@@ -95,10 +87,51 @@ const ui_structure = {
             { visible: true, component_type: "group_transaction_listing", transactions: [] }
         ],
         
-        wallet_purchase_page: [],
-        wallet_withdraw_page: [],
-        wallet_personal_page: [],
-        wallet_group_page: [],
+        wallet_purchase_start_page: [
+            {   
+                visible: true,
+                component_type: "list_pad",
+                component_owner: "wallet_page",
+                item_list: [
+                    { 
+                        item_type: "list_item_transaction_token", 
+                        type: "purchase", 
+                        label: "Token Purchase", 
+                        datetime: "2025-05-25T09:00:00Z" 
+                    },
+                    { 
+                        item_type: "list_item_transaction_token", 
+                        type: "purchase", 
+                        label: "Vest Purchase", 
+                        datetime: "2025-05-25T09:00:00Z" 
+                    }
+                    
+                ]
+            }
+        ],
+
+        wallet_purchase_types: [
+            {   
+                visible: true,
+                component_type: "list_pad",
+                component_owner: "wallet_page",
+                item_list: [
+                    { 
+                        item_type: "list_item_transaction_token", 
+                        type: "vest", 
+                        label: "Vest", 
+                        datetime: "2025-05-25T09:00:00Z" 
+                    },
+                    { 
+                        item_type: "list_item_transaction_token", 
+                        type: "token", 
+                        label: "Token", 
+                        datetime: "2025-05-25T09:00:00Z" 
+                    }
+                    
+                ]
+            }
+        ],
 
 
         personal_profile_page: [
@@ -159,49 +192,33 @@ const ui_structure = {
         wallet_start_page: [
             { visible: true, component_type: "button_stack", 
                 item_list: [
-                    { item_type: "button", item_label: "Purchase", action: "render_purchase_start()" },
-                    { item_type: "button", item_label: "Send", action: "render_send_start()" },
-                    { item_type: "button", item_label: "Sign", action: "render_sign_start()" },
-                    { item_type: "button", item_label: "Withdraw", action: "render_withdraw_start()" }
+                    { item_type: "button", item_label: "Purchase", action: "render_wallet_purchase_start()" },
+                    { item_type: "button", item_label: "Send", action: "render_wallet_send_start()" },
+                    { item_type: "button", item_label: "Sign", action: "render_wallet_sign_start()" },
+                    { item_type: "button", item_label: "Withdraw", action: "render_wallet_withdraw_start()" }
                 ] 
             }
         ],
-        wallet_purchase_page: [
+        wallet_purchase_start_page: [
             { 
                 visible: true, 
                 component_type: "button_stack", 
                 item_list: [
-                    { item_type: "button", item_label: "Transact", action: "process_wallet_transaction('purchase')" }
+                    { item_type: "button", item_label: "Transact", action: "show_wallet_purchase_types()" }
                 ] 
             }
         ],
-        wallet_withdraw_page: [
+
+        wallet_purchase_types: [
             { 
                 visible: true, 
                 component_type: "button_stack", 
                 item_list: [
-                    { item_type: "button", item_label: "Transact", action: "process_wallet_transaction('withdraw')" }
+                    { item_type: "button", item_label: "Transact", action: "purchase_types()" }
                 ] 
             }
         ],
-        wallet_personal_page: [
-            { 
-                visible: true, 
-                component_type: "button_stack", 
-                item_list: [
-                    { item_type: "button", item_label: "Transact", action: "process_wallet_transaction('personal')" }
-                ] 
-            }
-        ],
-        wallet_group_page: [
-            { 
-                visible: true, 
-                component_type: "button_stack", 
-                item_list: [
-                    { item_type: "button", item_label: "Transact", action: "process_wallet_transaction('group')" }
-                ] 
-            }
-        ],
+        
 
         create_page: [
             { visible: true, component_type: "button_stack", 
@@ -897,122 +914,12 @@ const ui_structure = {
         }
     },
 
-    update_wallet_group_data: async function () {
-        console.log("Updating group wallet data...");
+    update_wallet_purchase_type: function (){
+        console.log('processing update wallet purchase type');
 
-        try {
-            // Fetch user data from the backend
-            const userData = await fetch_user_backend_data();
+    }
 
-            if (!userData) {
-                console.warn("No user data found in the backend.");
-                return;
-            }
-
-            console.log("Fetched user data:", userData);
-
-            // Update middle_section.wallet_group_page with only two components
-            this.middle_section.wallet_group_page = [
-                { 
-                    visible: true, 
-                    component_type: "separation_title_address", 
-                    label: `Vest Transactions` 
-                },
-                { 
-                    visible: true, 
-                    component_type: "separation_title_address", 
-                    label: `Token Transactions` 
-                }
-            ];
-
-            console.log("Updated wallet_group_page:", this.middle_section.wallet_group_page);
-        } catch (error) {
-            console.error("Error updating group wallet data:", error);
-        }
-    },
-    update_wallet_purchase_data: async function () {
-        try {
-            // Fetch user data from the backend
-            const userData = await fetch_user_backend_data();
     
-            if (!userData) {
-                console.warn("No user data found in the backend.");
-                return;
-            }
-    
-            console.log("Fetched user data:", userData);
-    
-            // Leave middle_section.wallet_purchase_page as an empty array
-            this.middle_section.wallet_purchase_page = [
-                { 
-                    visible: true, 
-                    component_type: "separation_title_address", 
-                    label: `Vest Transactions` 
-                },
-                { 
-                    visible: true, 
-                    component_type: "separation_title_address", 
-                    label: `Token Transactions` 
-                },
-            ];
-    
-            
-    
-            console.log("Updated wallet_purchase_page:", this.middle_section.wallet_purchase_page);
-        } catch (error) {
-            console.error("Error updating purchase wallet data:", error);
-        }
-    },
-
-    update_wallet_withdraw_data: async function () {
-        try {
-            // Fetch user data from the backend
-            const userData = await fetch_user_backend_data();
-    
-            if (!userData) {
-                console.warn("No user data found in the backend.");
-                return;
-            }
-    
-            console.log("Fetched user data:", userData);
-    
-            // Leave middle_section.wallet_withdraw_page as an empty array
-            this.middle_section.wallet_personal_page = [
-                { 
-                    visible: true, 
-                    component_type: "separation_title_address", 
-                    label: `Vest Transactions` 
-                },
-                {
-                    component_type: "list_item_transaction_vest",
-                    item_list: [
-                        { type: "purchase", label: "Vest Purchase" },
-                        { type: "withdraw", label: "Vest Withdrawal" }
-                    ]
-                },
-                { 
-                    visible: true, 
-                    component_type: "separation_title_address", 
-                    label: `Token Transactions` 
-                },
-                {
-                    component_type: "list_item_transaction_token",
-                    item_list: [
-                        { type: "purchase", label: "Token Purchase" },
-                        { type: "send", label: "Token Sent" },
-                        { type: "receive", label: "Token Received" },
-                        { type: "withdraw", label: "Token Withdrawal" }
-                    ]
-                }
-            ];
-    
-            
-    
-            console.log("Updated wallet_withdraw_page:", this.middle_section.wallet_withdraw_page);
-        } catch (error) {
-            console.error("Error updating withdraw wallet data:", error);
-        }
-    },
 
  
 };

@@ -210,7 +210,50 @@ function create_middle_section(items) {
                             listItemElement.setAttribute("data-contact-app-user-id", listItem.user_dict?.id || "null");
                             break;
 
-                        
+                        case "list_item_transaction":
+                            console.log('now rendering list_item_transaction');
+
+                            let icon_class = "";
+                            switch (listItem.type){
+                                case "vest":
+                                    icon_class = "fa-solid fa-";
+                                    break;
+                                case "token":
+                                    break;
+                                case "purchase":
+                                    icon_class = "fa-solid fa-cart-shopping";
+                                    break;
+                                case "withdraw":
+                                    icon_class = "fa-solid fa-money-bill-transfer";
+                                    break;
+                                case "send":
+                                    icon_class = "fa-solid fa-arrow-right";
+                                    break;
+                                case "recieve":
+                                    icon_class = "fa-solid fa-arrow-left";
+                                    break;
+                                default:
+                                    console.warn(`Unknown transaction type : ${listItem.type}`);
+                            }
+
+                            listItemElement.innerHTML = `
+                                <div class="list_item_container">
+                                    <div class="list_item_icon">
+                                        <i class="${icon_class}"></i>
+                                    </div>
+                                    <div class="list_item_content">
+                                        <div class="list_item_header">
+                                            <div class="list_item_title">${listItem.label}</div>
+                                            <span class="list_item_title_spacer"></span>
+                                            <div class="list_item_datetime">${new Date(listItem.datetime).toLocaleDateString()}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            console.log(`before appending, created transaction vest item is ${listItemElement}`);
+                            element.appendChild(listItemElement); // Append the correct element
+                            console.log('ending creation of a single transaction vest item');
+                            break;
 
                         case "list_item_transaction_vest":
                             console.log('starting creation of transaction vest item');
@@ -725,9 +768,6 @@ async function render_wallet_interface() {
 }
 
 
-
-
-
 function render_wallet_start() {
     console.log("Rendering wallet start page...");
 
@@ -779,8 +819,8 @@ function render_wallet_start() {
 }
 
 
-function render_wallet_personal() {
-    console.log("Rendering personal wallet page...");
+function render_wallet_purchase_start(){
+    console.log(`checking for render wallet purchase start`);
 
     // Clear previous content
     document.body.innerHTML = "";
@@ -798,38 +838,30 @@ function render_wallet_personal() {
     centerContainer.classList.add(centerContainerClass);
     container.appendChild(centerContainer);
 
-    try {
-        // Dynamically update the personal wallet data
-        ui_structure.update_wallet_personal_data();
+    // Render top section
+    let topSectionConfig = ui_structure.top_section.wallet_purchase_start_page;
+    if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+        centerContainer.appendChild(create_top_section(topSectionConfig));
+    }
 
-        // Parse UI structure for personal wallet page
-        let topSectionConfig = ui_structure.top_section.wallet_personal_page;
-        let middleSectionConfig = ui_structure.middle_section.wallet_personal_page;
-        let bottomSectionConfig = ui_structure.bottom_section.wallet_personal_page;
-
-        // Build top section
-        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
-            centerContainer.appendChild(create_top_section(topSectionConfig));
-        }
-
-        // Build middle section for personal wallet page
-        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
-            let middleSection = create_middle_section(middleSectionConfig);
-            centerContainer.appendChild(middleSection);
-        }
-
-        // Build bottom section for personal wallet page
-        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
-            let bottomSection = create_bottom_section(bottomSectionConfig);
-            centerContainer.appendChild(bottomSection);
-        }
-    } catch (error) {
-        console.error("Error rendering personal wallet page:", error);
+    // Render middle section
+    let middleSectionConfig = ui_structure.middle_section.wallet_purchase_start_page;
+    // Build middle section for other profile page
+    if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+        let middleSection = create_middle_section(middleSectionConfig);
+        centerContainer.appendChild(middleSection);
+    }
+    
+    // Render bottom section
+    let bottomSectionConfig = ui_structure.bottom_section.wallet_purchase_start_page;
+    if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+        let bottomSection = create_bottom_section(bottomSectionConfig);
+        centerContainer.appendChild(bottomSection);
     }
 }
 
-function render_wallet_group() {
-    console.log("Rendering group wallet page...");
+function show_wallet_purchase_types(){
+    console.log('showing wallet purchase types');
 
     // Clear previous content
     document.body.innerHTML = "";
@@ -847,133 +879,42 @@ function render_wallet_group() {
     centerContainer.classList.add(centerContainerClass);
     container.appendChild(centerContainer);
 
-    try {
-        // Dynamically update the group wallet data
-        ui_structure.update_wallet_group_data();
+    // Render top section
+    let topSectionConfig = ui_structure.top_section.wallet_purchase_types;
+    if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
+        centerContainer.appendChild(create_top_section(topSectionConfig));
+    }
 
-        // Parse UI structure for group wallet page
-        let topSectionConfig = ui_structure.top_section.wallet_group_page;
-        let middleSectionConfig = ui_structure.middle_section.wallet_group_page;
-        let bottomSectionConfig = ui_structure.bottom_section.wallet_group_page;
-
-        // Build top section
-        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
-            centerContainer.appendChild(create_top_section(topSectionConfig));
-        }
-
-        // Build middle section for group wallet page
-        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
-            let middleSection = create_middle_section(middleSectionConfig);
-            centerContainer.appendChild(middleSection);
-        }
-
-        // Build bottom section for group wallet page
-        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
-            let bottomSection = create_bottom_section(bottomSectionConfig);
-            centerContainer.appendChild(bottomSection);
-        }
-    } catch (error) {
-        console.error("Error rendering group wallet page:", error);
+    // Render middle section
+    let middleSectionConfig = ui_structure.middle_section.wallet_purchase_types;
+    // Build middle section for other profile page
+    if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
+        let middleSection = create_middle_section(middleSectionConfig);
+        centerContainer.appendChild(middleSection);
+    }
+    
+    // Render bottom section
+    let bottomSectionConfig = ui_structure.bottom_section.wallet_purchase_types;
+    if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
+        let bottomSection = create_bottom_section(bottomSectionConfig);
+        centerContainer.appendChild(bottomSection);
     }
 }
 
-function render_wallet_purchase() {
-    console.log("Rendering wallet purchase page...");
 
-    // Clear previous content
-    document.body.innerHTML = "";
+function render_wallet_send_start(){
 
-    // Determine container classes based on screen size
-    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
-    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
-
-    // Create main container
-    let container = document.createElement("div");
-    container.classList.add(containerClass);
-    document.body.appendChild(container);
-
-    let centerContainer = document.createElement("div");
-    centerContainer.classList.add(centerContainerClass);
-    container.appendChild(centerContainer);
-
-    try {
-        // Dynamically update the wallet purchase data
-        ui_structure.update_wallet_purchase_data();
-
-        // Parse UI structure for wallet purchase page
-        let topSectionConfig = ui_structure.top_section.wallet_purchase_page;
-        let middleSectionConfig = ui_structure.middle_section.wallet_purchase_page;
-        let bottomSectionConfig = ui_structure.bottom_section.wallet_purchase_page;
-
-        // Build top section
-        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
-            centerContainer.appendChild(create_top_section(topSectionConfig));
-        }
-
-        // Build middle section for wallet purchase page
-        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
-            let middleSection = create_middle_section(middleSectionConfig);
-            centerContainer.appendChild(middleSection);
-        }
-
-        // Build bottom section for wallet purchase page
-        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
-            let bottomSection = create_bottom_section(bottomSectionConfig);
-            centerContainer.appendChild(bottomSection);
-        }
-    } catch (error) {
-        console.error("Error rendering wallet purchase page:", error);
-    }
 }
 
-function render_wallet_withdraw() {
-    console.log("Rendering wallet withdraw page...");
+function render_wallet_sign_start(){
 
-    // Clear previous content
-    document.body.innerHTML = "";
-
-    // Determine container classes based on screen size
-    let containerClass = window.innerWidth < 777 ? "app_container_small" : "app_container_big";
-    let centerContainerClass = window.innerWidth < 777 ? "app_center_container_small" : "app_center_container_big";
-
-    // Create main container
-    let container = document.createElement("div");
-    container.classList.add(containerClass);
-    document.body.appendChild(container);
-
-    let centerContainer = document.createElement("div");
-    centerContainer.classList.add(centerContainerClass);
-    container.appendChild(centerContainer);
-
-    try {
-        // Dynamically update the wallet withdraw data
-        ui_structure.update_wallet_withdraw_data();
-
-        // Parse UI structure for wallet withdraw page
-        let topSectionConfig = ui_structure.top_section.wallet_withdraw_page;
-        let middleSectionConfig = ui_structure.middle_section.wallet_withdraw_page;
-        let bottomSectionConfig = ui_structure.bottom_section.wallet_withdraw_page;
-
-        // Build top section
-        if (topSectionConfig && topSectionConfig.some(item => item.visible)) {
-            centerContainer.appendChild(create_top_section(topSectionConfig));
-        }
-
-        // Build middle section for wallet withdraw page
-        if (middleSectionConfig && middleSectionConfig.some(item => item.visible)) {
-            let middleSection = create_middle_section(middleSectionConfig);
-            centerContainer.appendChild(middleSection);
-        }
-
-        // Build bottom section for wallet withdraw page
-        if (bottomSectionConfig && bottomSectionConfig.some(item => item.visible)) {
-            let bottomSection = create_bottom_section(bottomSectionConfig);
-            centerContainer.appendChild(bottomSection);
-        }
-    } catch (error) {
-        console.error("Error rendering wallet withdraw page:", error);
-    }
 }
+
+function render_wallet_withdraw_start(){
+
+}
+
+
 
 
 function render_resource_listing_interface(resource_page) {
