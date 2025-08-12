@@ -159,6 +159,7 @@ def buy_sosa():
         return jsonify({"error": str(e)}), 400
 
 
+
 class BaseModelMixin:
     def to_dict(self):
         result = {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -639,6 +640,7 @@ class CreateSingleChat(Resource):
             db.session.rollback()
             print(f"Error creating single chat: {e}")
             return {"message": "Error creating single chat"}, 500
+
 
 class CreateGroupChat(Resource):
     def post(self):

@@ -11,23 +11,25 @@ node_modules
 .env
 
 # Hardhat files
-/cache
-/artifacts
+/scroll-local/cache
+/scroll-local/artifacts
 
 # TypeChain files
-/typechain
-/typechain-types
+/scroll-local/typechain
+/scroll-local/typechain-types
 
 # solidity-coverage files
-/coverage
-/coverage.json
+/scroll-local/coverage
+/scroll-local/coverage.json
 
 # Hardhat Ignition default folder for deployments against a local node
-ignition/deployments/chain-31337
+/scroll-local/ignition/deployments/chain-31337
 
 # Ignore all __pycache__ directories and compiled Python files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+
 
